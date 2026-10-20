@@ -82,6 +82,8 @@ Predicate.and(p1, p2)  Predicate.or(p1, p2)  Predicate.not(p)   // not() is stat
 
 Dynamic predicates return `null` when the argument is `null` or `""`, and `where`/`and`/`or` ignore `null`:
 `eqIf`, `neIf`, `gtIf`, `geIf`, `ltIf`, `leIf`, `likeIf`, `ilikeIf`, `betweenIf` (either bound may be null), `inIf`.
+`inIf(null)` is ignored, but **`inIf(emptyList)` is not** — it matches no rows; check `isEmpty()` yourself if an
+empty selection means "no filter".
 
 ```java
 sqlClient.createQuery(t)

@@ -47,7 +47,9 @@ and `@EnableDtoGeneration` (Java) on some class; put `@EnableImplicitApi` on the
   `ExceptionTranslator`, `ScalarProvider`, `PropScalarProviderFactory`, `CacheFactory`, `CacheOperator`,
   `CacheAbandonedCallback`, `Customizer`, `Initializer`, `Executor`, `SqlFormatter`, `JsonCodec`, `Dialect`,
   `DatabaseNamingStrategy`, `DatabaseSchemaStrategy`, `MetaStringResolver`, `UserIdGeneratorProvider`,
-  `LogicalDeletedValueGeneratorProvider`, `TransientResolverProvider`, `MicroServiceExchange`.
+  `LogicalDeletedValueGeneratorProvider`, `TransientResolverProvider`, `MicroServiceExchange`. A
+  `CacheAbandonedCallback.log()` bean is added when you declare none. In Java mode, Kotlin `KFilter`/`KCustomizer`/
+  `KInitializer` beans are ignored (warning only), and vice versa.
 - Resolves `@Transient(ref = "beanName")` resolvers, `@GeneratedValue(generatorRef = "beanName")` id generators and
   `@LogicalDeleted(generatorRef = ...)` from the Spring context.
 - Exposes OpenAPI/TypeScript endpoints when the corresponding `jimmer.client.*` paths are configured, and translates

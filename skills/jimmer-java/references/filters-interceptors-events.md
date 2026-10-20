@@ -269,3 +269,17 @@ or wrap an existing Jackson 2 node with `new org.babyfish.jimmer.jackson.v2.Node
 encodes unusually (Debezium decimals/timestamps) are decoded with
 `JSqlClient.Builder.setBinLogPropReader(Class<?> | prop, (prop, node) -> value)`. Middle tables can be passed too
 (their events become association events).
+
+**0.12.4 bug — register a `BigDecimal` reader.** The built-in `Node` implementations convert `BigDecimal`/`BigInteger`
+values with `asInt()`, so any binlog row containing such a column fails with `IllegalArgumentException: Illegal json`
+(cause: `Integer cannot be cast to BigDecimal`). Date/time columns are skipped (not applied) unless you register a
+reader for them as well:
+
+```java
+JSqlClient.newBuilder()
+        .setBinLogPropReader(BigDecimal.class, (prop, node) -> new BigDecimal(node.castTo(String.class)))
+        .setBinLogPropReader(BigInteger.class, (prop, node) -> new BigInteger(node.castTo(String.class)))
+        ...
+```
+
+With the Spring Boot starter, apply them in a `JSqlClient.Builder` customizer bean (`Customizer`).

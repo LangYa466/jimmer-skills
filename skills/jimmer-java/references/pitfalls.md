@@ -41,6 +41,7 @@ result shows up, and as a checklist when reviewing Jimmer code.
 | `SaveException.TargetIsNotTransferable` | saving a parent whose child belongs to another parent; allow with `setTargetTransferMode(...)`/`setTargetTransferable(true)` |
 | `SaveException.CannotDissociateTarget` | `REPLACE`/delete would orphan children whose many-to-one is `CHECK`/`NONE`; configure `@OnDissociate(SET_NULL/DELETE)` or `setDissociateAction` |
 | `SaveException.OptimisticLockError` | stale `@Version` or custom optimistic lock predicate false |
+| `IllegalArgumentException: Illegal exception translator type ... is not class type` | an `ExceptionTranslator` written as a lambda; use an anonymous class or a named class |
 | `IllegalStateException` from `sqlClient.transaction(...)` | needs a Jimmer `TxConnectionManager`; with Spring use `@Transactional` |
 | `NullPointerException: The parameters[i] ... cannot be null ... @DynamicParam` | Spring Data `JRepository` derived-query parameters are only dynamic with `@DynamicParam` |
 | `UnsupportedOperationException` in `createInsert(associationTable, source)` | middle-table insert-from-select only supports a rootless source (`createBaseQuery()` with constants) in 0.12.4 |
@@ -50,6 +51,7 @@ result shows up, and as a checklist when reviewing Jimmer code.
 | Update with join fails | only `MySqlDialect`/`PostgresDialect` support joins in `createUpdate`; use a subquery |
 | `returning(...)` on update/insert unsupported | DML returning is implemented for `H2Dialect` and `PostgresDialect` |
 | `DefaultDialect` + `TRANSACTION_ONLY` cache invalidation (Spring) | the starter needs table `JIMMER_TRANS_CACHE_OPERATOR`; set a real dialect |
+| `IllegalArgumentException: Illegal json` from `getBinLog().accept(...)` (cause `Integer cannot be cast to BigDecimal`) | 0.12.4 converts `BigDecimal`/`BigInteger` binlog values with `asInt()`; register `setBinLogPropReader(BigDecimal.class, (p, n) -> new BigDecimal(n.castTo(String.class)))` |
 
 ## Silent wrong results (the dangerous ones)
 
@@ -78,6 +80,7 @@ result shows up, and as a checklist when reviewing Jimmer code.
 11. **Java `@Formula` default methods** report `isLoaded() == true` whenever their dependencies are loaded, but are
     only serialized when fetched explicitly.
 12. **Repository `insert` = `INSERT_ONLY` + `APPEND`** — it never updates and appends associated objects.
+13. **`inIf(emptyList)` is not ignored** — it matches no rows; only `inIf(null)` is skipped.
 
 ## APIs that changed or never existed (docs/blogs vs 0.12.4)
 

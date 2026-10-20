@@ -85,7 +85,7 @@ long id = sqlClient.save(Immutables.createBook(d -> {
 5. **Objects without id need complete `@Key` values** (or `setKeyProps(...)`, or `INSERT_ONLY`/`NON_IDEMPOTENT_UPSERT`), otherwise `SaveException.NeitherIdNorKey`. With a key containing a `@ManyToOne` (e.g. `TreeNode(name, parent)`), the root object must set `parent` explicitly (even to `null`); children get it implicitly.
 6. **`@Formula` lives in `org.babyfish.jimmer.Formula`** (not `...sql`). Java formulas are `default` methods with `dependencies`; only SQL formulas (`@Formula(sql = "...%alias...")`) are usable in the DSL.
 7. **Top-level queries cannot join collection associations** — use implicit subqueries `table.authors(a -> ...)`, real subqueries, or `table.asTableEx().authors()` (+ `distinct()`).
-8. **Static predicates treat `null` specially:** `eq(null)` → `is null`; other operators reject `null`. Use dynamic predicates (`eqIf`, `ilikeIf`, `betweenIf`, …) for optional filters.
+8. **Static predicates treat `null` specially:** `eq(null)` → `is null`; other operators reject `null`. Use dynamic predicates (`eqIf`, `ilikeIf`, `betweenIf`, …) for optional filters. `inIf(null)` is skipped, but `inIf(emptyList)` matches no rows.
 9. **`findById` returns `null` if absent; `findOneById` throws.** Without an object cache they run a normal query, so global filters and logical deletion apply. With an object cache, a cache *hit* is returned without re-checking filters (a miss is loaded with filters) — use an explicit query when filter semantics matter.
 10. **Jackson:** in 0.12 the module is `org.babyfish.jimmer.jackson.v2.ImmutableModuleV2` (Jackson 2) or `...v3.ImmutableModuleV3` (Jackson 3). The old `ImmutableModule` class no longer exists. The starter registers them automatically.
 11. **Projects without entities but with `.dto` files** (or Web controllers for client generation) still need `jimmer-apt`, and Java needs `@EnableDtoGeneration` on any class in that module.
@@ -93,6 +93,7 @@ long id = sqlClient.save(Immutables.createBook(d -> {
 13. **REST client exceptions are declared with Java `throws XxxException`** (exception classes generated from `@ErrorFamily` enums). There is no `@ThrowsAll` in 0.12.
 14. **Keep the column on the left of comparisons** (`t.price().lt(x)`, `table.price().lt(values.newNumber(P))`). 0.12.4 renders a constant-on-the-left comparison such as `Expression.numeric().value(x).gt(col)` with the *negated* operator (`col <= x`) — silently wrong results.
 15. **Spring Data `JRepository` derived-query parameters are dynamic only with `@DynamicParam`**; a null argument otherwise throws `NullPointerException`.
+16. **`ExceptionTranslator`s must be anonymous or named classes** — a lambda fails at runtime ("Illegal exception translator type").
 
 ## Task router — read the reference you need
 

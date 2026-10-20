@@ -402,7 +402,9 @@ List<Customer> vipCustomers();
         readonly = true)                     // read-only association: never written by save commands
 List<Customer> customers();
 ```
-Other `@JoinTable` flags: `preventDeletionBySource/Target`, `cascadeDeletedBySource/Target`, `schema`.
+Other `@JoinTable` flags: `cascadeDeletedBySource/Target = true` (the DB cascades middle-table rows, so Jimmer
+skips deleting them) and `schema`. `preventDeletionBySource/Target` exist on the annotation but have no effect in
+0.12.4.
 
 ```java
 // non-structural legacy mapping (comma separated ids); only with @ManyToMany; read-only in practice

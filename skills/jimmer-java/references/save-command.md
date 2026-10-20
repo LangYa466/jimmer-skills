@@ -377,6 +377,10 @@ sqlClient.saveCommand(book)
         .execute();
 ```
 
+Write translators as anonymous classes or named classes: a **lambda** fails at runtime with
+`IllegalArgumentException: Illegal exception translator type ... is not class type`, because Jimmer reads the
+generic argument reflectively.
+
 A returned checked exception is wrapped in `ExecutionException`; return a `RuntimeException` to avoid that. This
 replaces "check-then-insert" pre-queries, which are racy.
 
