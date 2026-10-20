@@ -14,7 +14,7 @@
 - [Input DTOs: null handling modes](#input-dtos-null-handling-modes)
 - [Specifications (super QBE)](#specifications-super-qbe)
 - [Output DTO association options](#output-dto-association-options)
-- [Composition: for, fragments, reuse with ->](#composition-for-fragments-reuse-with-)
+- [Composition: for, fragments and reuse](#composition-for-fragments-and-reuse)
 - [Polymorphic DTOs (#types)](#polymorphic-dtos-types)
 - [Generated Java code and usage](#generated-java-code-and-usage)
 - [Build notes](#build-notes)
@@ -279,7 +279,7 @@ public class ChildNodesRecursionStrategy implements RecursionStrategy<TreeNode> 
 }
 ```
 
-## Composition: for, fragments, reuse with ->
+## Composition: for, fragments and reuse
 
 ```
 package com.example.dto.catalog              // generated package + namespace; no export needed

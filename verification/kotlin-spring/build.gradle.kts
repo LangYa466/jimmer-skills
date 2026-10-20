@@ -17,11 +17,13 @@ dependencies {
     implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:$jimmerVersion")
     ksp("org.babyfish.jimmer:jimmer-ksp:$jimmerVersion")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-graphql")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     compileOnly("org.springframework.data:spring-data-redis")
     runtimeOnly("com.h2database:h2")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.graphql:spring-graphql-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

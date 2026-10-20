@@ -17,7 +17,7 @@ error, runtime exception or surprising result shows up, and as a checklist when 
 |---|---|
 | `Unresolved reference 'BookDraft'`, `fetchBy`, `table.name`, `BookView` | code not generated or stale: run `./gradlew kspKotlin`/build; check `ksp("org.babyfish.jimmer:jimmer-ksp:…")` in **this** module and `kotlin.srcDir("build/generated/ksp/main/kotlin")` for the IDE |
 | KSP `GeneratorException ... declares several types decorated by ...` | **one Jimmer type per `.kt` file**: a file may declare only one `@Entity`/`@MappedSuperclass`/`@Embeddable`/`@Immutable` type |
-| DTO class not regenerated after editing only a `.dto` file | KSP doesn't track `src/main/dto`; add the `KspAATask` inputs block from setup-and-config, or clean |
+| DTO class not regenerated after editing only a `.dto` file | KSP doesn't track `src/main/dto`; add the `KspAATask` inputs block from `references/setup-and-config.md`, or clean |
 | KSP plugin fails to apply / "ksp-… is too old for kotlin-…" | the KSP version prefix must equal the Kotlin version (`2.1.20-2.0.1` for Kotlin 2.1.20) |
 | Generated extension properties like `table.name` not found | import them: they are top-level extensions in the entity's package (`com.example.model.name`); IDE auto-import usually handles it |
 | `Unresolved reference 'not'` for `not(p)` | it is an extension: `p.not()` |
@@ -39,7 +39,7 @@ error, runtime exception or surprising result shows up, and as a checklist when 
 | `UnloadedException: property X is unloaded` | the fetcher/DTO didn't load it. Fetch it, or check `isLoaded(obj, Book::store)` (`org.babyfish.jimmer.kt.isLoaded`) |
 | `UnloadedException` fetching an ordered association **with an association cache** | include the `orderedProps` in the child fetcher (`books { name(); edition() }`); id-only `books()` fails |
 | `SaveException.NeitherIdNorKey` | no id and incomplete `@Key`; a root `TreeNode` keyed by `(name, parent)` must set `parent = null` explicitly |
-| `SaveException.NotUnique` / `CannotDissociateTarget` / `TargetIsNotTransferable` / `OptimisticLockError` | see save-command; translate business errors with an `ExceptionTranslator` |
+| `SaveException.NotUnique` / `CannotDissociateTarget` / `TargetIsNotTransferable` / `OptimisticLockError` | see `references/save-command.md`; translate business errors with an `ExceptionTranslator` |
 | `IllegalArgumentException: Illegal exception translator type ... is not class type` | an `ExceptionTranslator` written as a SAM lambda loses its generic type; use `object : ExceptionTranslator<SaveException.NotUnique> { … }` or a named class |
 | `NullPointerException: The parameters[i] ... cannot be null ... @DynamicParam` | `KRepository` derived-query params are dynamic only with `@DynamicParam` — a Kotlin `String?` is not enough |
 | `No qualifying bean of type 'KSqlClient'` (Spring) | set `jimmer.language: kotlin`; the default creates a `JSqlClient` |
@@ -92,6 +92,7 @@ error, runtime exception or surprising result shows up, and as a checklist when 
 | `RedisValueBinder…objectMapper(...)` | `RedisCacheCreator(connectionFactory, JsonCodec.jsonCodec())` + `AbstractKCacheFactory` |
 | `binLog.accept(table, JsonNode, JsonNode)` | `accept(table, Node, Node)` with `org.babyfish.jimmer.jackson.codec.Node` |
 | `@org.babyfish.jimmer.client.Api` | `@org.babyfish.jimmer.client.meta.Api` (or `@EnableImplicitApi`) |
+| `DataFetchingEnvironments.createQuery(Book.class, env)` (GraphQL) | `DataFetchingEnvironments.createFetcher(Book.class, env)` / Kotlin `env.toFetcher<Book>()` |
 | `@ThrowsAll` | Kotlin `@Throws(XxxException::class)` |
 | `SpringClients` | `org.babyfish.jimmer.spring.SqlClients` |
 | kapt / Maven for Kotlin | Gradle + KSP only |

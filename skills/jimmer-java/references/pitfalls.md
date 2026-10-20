@@ -96,6 +96,7 @@ result shows up, and as a checklist when reviewing Jimmer code.
 | `RedisValueBinder...objectMapper(objectMapper)` | `new RedisCacheCreator(connectionFactory, JsonCodec.jsonCodec())` + `AbstractCacheFactory` |
 | `BinLog.accept(table, JsonNode, JsonNode)` | `accept(table, Node, Node)` with `org.babyfish.jimmer.jackson.codec.Node` (`JsonCodec.jsonCodec().treeReader().read(json)`) |
 | `@org.babyfish.jimmer.client.Api` | `@org.babyfish.jimmer.client.meta.Api` (or `@EnableImplicitApi`) |
+| `DataFetchingEnvironments.createQuery(Book.class, env)` (GraphQL) | `DataFetchingEnvironments.createFetcher(Book.class, env)` |
 | `@ThrowsAll` | Java `throws XxxException` |
 | `jimmer.save-command-pessimistic-lock`, `jimmer.client.ts.anonymous` | don't exist; per command `setPessimisticLock(...)` |
 | `findNullable(id, fetcher)` | exists on Spring Data `JRepository`; class repositories (`JavaRepository`/`AbstractJavaRepository`) use `findById(id, fetcher)` (returns `null` when absent) |

@@ -9,7 +9,21 @@ permissions:
   contents: read
 
 jobs:
-  verify:
+  skills:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate skills against the Agent Skills specification
+        run: |
+          pip install skills-ref==0.1.1
+          for dir in skills/*/; do agentskills validate "$dir"; done
+      - name: Validate plugin manifests
+        run: python3 -c "import json; [json.load(open(f)) for f in ('.claude-plugin/plugin.json', '.claude-plugin/marketplace.json')]"
+
+  snippets:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -24,9 +38,6 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.14.3
-      - name: Validate plugin manifests
-        if: matrix.project == 'java'
-        run: python3 -c "import json; [json.load(open(f)) for f in ('.claude-plugin/plugin.json', '.claude-plugin/marketplace.json')]"
       - name: Run snippet tests
         working-directory: verification/${{ matrix.project }}
         run: gradle test --no-daemon

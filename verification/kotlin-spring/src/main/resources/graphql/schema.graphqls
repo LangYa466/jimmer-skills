@@ -1,0 +1,38 @@
+type Query {
+    books(name: String): [Book!]!
+    orphanBooks: [Book!]!
+}
+
+type Mutation {
+    saveBook(input: BookInput!): Book!
+}
+
+# Type and field names must match the entity and property names
+type Book {
+    id: Int!
+    name: String!
+    edition: Int!
+    price: Float!
+    store: BookStore
+    authors: [Author!]!
+}
+
+type BookStore {
+    id: Int!
+    name: String!
+    books: [Book!]!
+}
+
+type Author {
+    id: Int!
+    firstName: String!
+    lastName: String!
+}
+
+input BookInput {
+    name: String!
+    edition: Int!
+    price: Float!
+    storeId: Int
+    authorIds: [Int!]!
+}

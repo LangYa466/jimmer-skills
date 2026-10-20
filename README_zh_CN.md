@@ -31,6 +31,18 @@ claude plugin install jimmer-skills@jimmer-skills --scope user
 编写 Jimmer 代码时技能会自动加载，也可以显式调用 `/jimmer-skills:jimmer-java`、`/jimmer-skills:jimmer-kotlin`。
 不使用插件系统时，把技能目录复制到 `~/.claude/skills/`（或项目内的 `.claude/skills/`）即可。
 
+## 技能格式
+
+两个技能都遵循 [Agent Skills 规范](https://agentskills.io/specification)：目录名即技能名，包含 `SKILL.md`
+（YAML frontmatter：`name`、`description`、`license`、`metadata`，正文少于 500 行）以及按需加载、仅一层深的 `references/`。
+CI 使用官方参考校验器进行检查：
+
+```bash
+pip install skills-ref
+agentskills validate skills/jimmer-java
+agentskills validate skills/jimmer-kotlin
+```
+
 ## 内容
 
 每个技能包含一个简短的 `SKILL.md`（核心概念、快速开始、关键规则、任务路由、常用模板）以及按需加载的参考文档：
@@ -47,7 +59,7 @@ claude plugin install jimmer-skills@jimmer-skills --scope user
 | `delete-and-dml` | 删除指令、update/delete 语句、基于查询的 insert/upsert、中间表 API |
 | `filters-interceptors-events` | 全局过滤器、逻辑删除行为、`DraftInterceptor`/`DraftPreProcessor`、触发器、binlog |
 | `cache` | 对象/关联/计算属性/多视图缓存、Redis + Caffeine、失效 |
-| `spring-boot` | starter 配置、Repository、事务、`@FetchBy`、错误族、OpenAPI/TypeScript、多数据源 |
+| `spring-boot` | starter 配置、Repository、事务、`@FetchBy`、错误族、OpenAPI/TypeScript、Spring GraphQL、多数据源 |
 | `pitfalls` | 编译错误、运行时异常、静默错误结果、API 变化、代码审查清单 |
 
 ### 技能中记录的 0.12.4 重要行为
@@ -67,9 +79,9 @@ claude plugin install jimmer-skills@jimmer-skills --scope user
 | 项目 | 内容 |
 |---|---|
 | `verification/java` | 纯 Java + H2：映射、查询、抓取器、DTO、保存、DML、过滤器、触发器、binlog、缓存 |
-| `verification/java-spring` | Spring Boot starter（Java）：Repository、`@FetchBy`、错误族、OpenAPI、TypeScript |
+| `verification/java-spring` | Spring Boot starter（Java）：Repository、`@FetchBy`、错误族、OpenAPI、TypeScript、Spring GraphQL |
 | `verification/kotlin` | 纯 Kotlin + KSP + H2：Kotlin API 的同类主题 |
-| `verification/kotlin-spring` | Spring Boot starter（Kotlin）：`AbstractKotlinRepository`、`KRepository`、`KCustomizer`、OpenAPI、TypeScript |
+| `verification/kotlin-spring` | Spring Boot starter（Kotlin）：`AbstractKotlinRepository`、`KRepository`、`KCustomizer`、OpenAPI、TypeScript、Spring GraphQL |
 
 `verification/java` 与 `verification/kotlin` 中的 `behavior/KnownBehaviorTest` 固定了上面列出的 0.12.4 特殊行为（Repository/starter 相关行为由两个 Spring 项目断言）；升级 Jimmer 后如果这些测试失败，说明技能需要更新。
 使用 Gradle 8.14+ 与 JDK 21 运行：
@@ -78,7 +90,7 @@ claude plugin install jimmer-skills@jimmer-skills --scope user
 cd verification/kotlin && gradle test
 ```
 
-CI 会在每次 push 和 pull request 时运行全部四个项目。
+CI 会在每次 push 和 pull request 时运行全部四个项目以及技能格式校验。
 
 ## 贡献
 

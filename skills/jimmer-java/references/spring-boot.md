@@ -10,6 +10,7 @@
 - [REST controllers returning entities (@FetchBy)](#rest-controllers-returning-entities-fetchby)
 - [Error families → typed client errors](#error-families--typed-client-errors)
 - [OpenAPI, Swagger/Scalar UI and TypeScript](#openapi-swaggerscalar-ui-and-typescript)
+- [Spring GraphQL](#spring-graphql)
 - [Multiple data sources](#multiple-data-sources)
 - [Spring Cloud / remote associations](#spring-cloud--remote-associations)
 
@@ -90,7 +91,7 @@ and `@EnableDtoGeneration` (Java) on some class; put `@EnableImplicitApi` on the
 | `jimmer.micro-service-name` | `""` | for remote associations |
 | `jimmer.error-translator.disabled` | `false` | disable `@ErrorFamily` → JSON translation |
 | `jimmer.error-translator.http-status` | `500` | HTTP status of translated errors |
-| `jimmer.error-translator.debug-info-supported` / `debug-info-max-stack-trace-count` | `false` / `0` | include messages/stack traces (never in production) |
+| `jimmer.error-translator.debug-info-supported` / `debug-info-max-stack-trace-count` | `false` / `Integer.MAX_VALUE` | include messages/stack traces (never in production) |
 | `jimmer.client.uri-prefix` | — | prefix added to generated client URLs |
 | `jimmer.client.ts.path` | — | e.g. `/ts.zip`; enables TypeScript download |
 | `jimmer.client.ts.api-name` / `indent` / `mutable` / `null-render-mode` / `is-enum-ts-style` | `Api` / `4` / `false` / `UNDEFINED` / `false` | TypeScript options |
@@ -313,6 +314,56 @@ jimmer:
 - Both endpoints stream their body (`StreamingResponseBody`): in `MockMvc` tests use
   `mvc.perform(asyncDispatch(mvc.perform(get("/openapi.yml")).andReturn()))`.
 - Javadoc/KDoc comments on controllers, entities, DTOs and props become descriptions (`@Description` for overrides).
+
+## Spring GraphQL
+
+With `spring-boot-starter-graphql` on the classpath, the starter's `JimmerSpringGraphQLAutoConfiguration` wires every
+entity into Spring GraphQL: each property gets a data fetcher, and every association and `@Transient`-resolver property
+gets a batch loader (`sqlClient.getLoaders()`). Clients can therefore request any association or calculated property —
+no `@SchemaMapping`/`@BatchMapping` code, no N+1. Only the root query is yours to write.
+
+```graphql
+# src/main/resources/graphql/schema.graphqls — type names = entity class names, field names = property names
+type Query { books(name: String): [Book!]! }
+type Mutation { saveBook(input: BookInput!): Book! }
+type Book { id: Int! name: String! edition: Int! price: Float! store: BookStore authors: [Author!]! }
+type BookStore { id: Int! name: String! books: [Book!]! }
+type Author { id: Int! firstName: String! lastName: String! }
+input BookInput { name: String! edition: Int! price: Float! storeId: Int authorIds: [Int!]! }
+```
+
+```java
+@Controller
+public class BookGraphQLController {
+
+    private final JSqlClient sqlClient;
+
+    public BookGraphQLController(JSqlClient sqlClient) { this.sqlClient = sqlClient; }
+
+    @QueryMapping
+    public List<Book> books(@Argument @Nullable String name, DataFetchingEnvironment env) {
+        BookTable table = BookTable.$;
+        return sqlClient.createQuery(table)
+                .where(table.name().ilikeIf(name))
+                .select(table.fetch(DataFetchingEnvironments.createFetcher(Book.class, env)))  // requested scalars only
+                .execute();
+    }
+
+    @MutationMapping
+    @Transactional
+    public Book saveBook(@Argument BookInput input) {          // input DTO generated from a .dto file
+        return sqlClient.save(input).getModifiedEntity();
+    }
+}
+```
+
+- `DataFetchingEnvironments` is `org.babyfish.jimmer.spring.graphql.DataFetchingEnvironments`; the method is
+  `createFetcher` (the official docs' `createQuery` does not exist in 0.12.4). Returning `select(table)` also works —
+  associations are still loaded on demand — but loads every scalar column.
+- `Long`, `BigDecimal`, `LocalDateTime` are not built-in GraphQL scalars. The schema above maps them to `Int`/`Float`
+  (values are coerced); for exact types register custom scalars with a `RuntimeWiringConfigurer` bean
+  (e.g. `graphql-java-extended-scalars`). Properties missing from the schema are simply not exposed.
+- GraphQL cannot express recursive fetches (`childNodes*`); clients nest explicitly.
 
 ## Multiple data sources
 

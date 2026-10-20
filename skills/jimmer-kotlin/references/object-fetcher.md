@@ -123,7 +123,7 @@ sqlClient.saveCommand(book).execute(fetcher).modifiedEntity   // re-read after s
 table.fetch(null)                                     // null fetcher = all table fields
 ```
 
-With the Spring starter, annotate controller return types with `@FetchBy("FETCHER_NAME")` (spring-boot reference).
+With the Spring starter, annotate controller return types with `@FetchBy("FETCHER_NAME")` (`references/spring-boot.md`).
 
 ## Output DTOs instead of fetchers
 
@@ -140,7 +140,7 @@ val back: Book = view.toEntity()                      // DTO → entity
 ```
 
 DTO association options (`!fetchType`, `!batch`, `!limit`, `!where`, `!orderBy`, `!filter`, `!depth`,
-`!recursion`) are declared in the `.dto` file — see dto-language.
+`!recursion`) are declared in the `.dto` file — see `references/dto-language.md`.
 
 ## Dynamic fetchers from strings
 
@@ -152,4 +152,4 @@ needs `org.antlr:antlr4-runtime:4.13.0` at runtime. Only for trusted callers.
 - One extra query per fetched association per batch; use `JOIN_ALWAYS` for small many-to-one lookups.
 - Global filters and logical deletion apply to fetched associations.
 - `limit(...)` on a list field means one query per parent.
-- With association caches, include the association's `orderedProps` in the child fetcher (see cache reference).
+- With association caches, include the association's `orderedProps` in the child fetcher (see `references/cache.md`).

@@ -222,7 +222,7 @@ No `@Embedded` annotation; embeddables have no id and no associations.
 At most **one** `@LogicalDeleted` property per entity. Deleting becomes an `UPDATE`; every query/fetch adds the
 "not deleted" predicate. Custom values: `generatorType`/`generatorRef` with `LogicalDeletedValueGenerator<T>`.
 Join tables: `@JoinTable(logicalDeletedFilter = JoinTable.LogicalDeletedFilter(columnName = "DELETED"))`,
-`deletedWhenEndpointIsLogicallyDeleted = true`. Query-time behavior → filters reference.
+`deletedWhenEndpointIsLogicallyDeleted = true`. Query-time behavior → `references/filters-interceptors-events.md`.
 
 ## Calculated properties: @Formula and @Transient
 
@@ -256,7 +256,7 @@ class BookStoreAvgPriceResolver(private val sqlClient: KSqlClient) : KTransientR
 ```
 
 Without Spring, resolvers need a no-arg constructor or one taking `KSqlClient`. For caching, override
-`getParameterMapRef()` and `getAffectedSourceIds(...)` (cache reference).
+`getParameterMapRef()` and `getAffectedSourceIds(...)` (`references/cache.md`).
 
 ## View properties: @IdView and @ManyToManyView
 
@@ -327,7 +327,7 @@ interface Person : Client { val firstName: String?; val lastName: String? }
 ```
 
 Single-table subtype columns must be nullable in the DB. Queries on the root return concrete subtype objects;
-see query/save references for `TypeMatchMode`, `treatAs`, `forType`.
+see `references/query-dsl.md` / `references/save-command.md` for `TypeMatchMode`, `treatAs`, `forType`.
 
 ## Remote associations
 

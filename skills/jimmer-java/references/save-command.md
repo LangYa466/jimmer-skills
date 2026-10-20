@@ -323,7 +323,7 @@ and use explicit locks/isolation when concurrent changes matter.
 
 ## Saving input DTOs
 
-Input DTOs (declared with `input` in `.dto` files, see dto-language) implement `Input<E>` and convert to entities:
+Input DTOs (declared with `input` in `.dto` files, see `references/dto-language.md`) implement `Input<E>` and convert to entities:
 
 ```java
 sqlClient.save(bookInput);                                       // = saveCommand(input.toEntity())

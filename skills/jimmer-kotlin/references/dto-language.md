@@ -13,7 +13,7 @@
 - [Input DTOs: null handling modes](#input-dtos-null-handling-modes)
 - [Specifications (super QBE)](#specifications-super-qbe)
 - [Output DTO association options](#output-dto-association-options)
-- [Composition: for, fragments, reuse with ->](#composition-for-fragments-reuse-with-)
+- [Composition: for, fragments and reuse](#composition-for-fragments-and-reuse)
 - [Polymorphic DTOs (#types)](#polymorphic-dtos-types)
 - [Generated Kotlin code and usage](#generated-kotlin-code-and-usage)
 
@@ -22,7 +22,7 @@
 Entities already express any shape, so output DTOs are optional; **input DTOs are recommended for every public
 write API** (explicit, secure contract). `.dto` files live in `src/main/dto/**` and are compiled by `jimmer-ksp`
 (no `@EnableDtoGeneration` needed in Kotlin). After editing only `.dto` files make sure KSP re-runs (see the
-`KspAATask` inputs recipe in setup-and-config).
+`KspAATask` inputs recipe in `references/setup-and-config.md`).
 
 ## Files, export, package, imports
 
@@ -255,7 +255,7 @@ class ChildNodesRecursionStrategy : RecursionStrategy<TreeNode> {
 }
 ```
 
-## Composition: for, fragments, reuse with ->
+## Composition: for, fragments and reuse
 
 ```
 package com.example.dto.catalog

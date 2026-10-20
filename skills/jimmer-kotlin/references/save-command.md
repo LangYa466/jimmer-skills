@@ -228,7 +228,7 @@ sqlClient.save(treeInput.toEntity().copy { parent = null })   // recursive roots
 ```
 
 `id(store)` / `id(authors) as authorIds` in the DTO become id-only references; `dynamic`/`fuzzy` inputs give PATCH
-semantics (dto-language reference).
+semantics (`references/dto-language.md`).
 
 ## Errors and exception translation
 

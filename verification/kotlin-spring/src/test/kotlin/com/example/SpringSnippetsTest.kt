@@ -42,8 +42,8 @@ class SpringSnippetsTest {
 
     @Test
     fun starterAndHooks() {
-        assertEquals(1, Hooks.CUSTOMIZED.get())
-        assertEquals(1, Hooks.INITIALIZED.get())
+        assertTrue(Hooks.CUSTOMIZED.get() >= 1)   // once per Spring context
+        assertTrue(Hooks.INITIALIZED.get() >= 1)
         val saved = bookRepository.save(Book {
             name = "Spring"
             edition = 1

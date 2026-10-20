@@ -16,9 +16,11 @@ dependencies {
     implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-graphql'
     runtimeOnly "org.babyfish.jimmer:jimmer-client-swagger:${jimmerVersion}"
     runtimeOnly 'com.h2database:h2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.graphql:spring-graphql-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 tasks.withType(JavaCompile).configureEach {

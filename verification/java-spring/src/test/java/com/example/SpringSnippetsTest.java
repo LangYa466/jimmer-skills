@@ -45,8 +45,8 @@ public class SpringSnippetsTest {
     @Test
     public void starterAndHooks() {
         assertNotNull(sqlClient);
-        assertEquals(1, Hooks.CUSTOMIZED.get());
-        assertEquals(1, Hooks.INITIALIZED.get());
+        assertTrue(Hooks.CUSTOMIZED.get() >= 1);   // once per Spring context
+        assertTrue(Hooks.INITIALIZED.get() >= 1);
         Book saved = bookRepository.save(Immutables.createBook(d -> d
                 .setName("Spring").setEdition(1).setPrice(BigDecimal.ONE))).getModifiedEntity();
         assertTrue(saved.id() > 0);             // modifiedTime set by DraftInterceptor bean

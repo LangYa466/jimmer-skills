@@ -54,7 +54,7 @@ Rules:
 - A `@ManyToOne`/`@OneToOne` whose **target** is filtered must be nullable (`val store: BookStore?`), unless every
   filter on the target implements `KAssociationIntegrityAssuranceFilter` *and* also applies to the source entity.
 - Fetcher-loaded associations are filtered too (`store.books` only contains the current tenant's books); with caches
-  enabled, filtered associations need `KCacheableFilter` (multi-view cache) — see cache reference.
+  enabled, filtered associations need `KCacheableFilter` (multi-view cache) — see `references/cache.md`.
 - `findById`/`findByIds` apply filters when no object cache is configured; with an object cache the root lookup
   ignores filters unless the filter implements `KShardingFilter`.
 
@@ -99,7 +99,7 @@ lifts logical deletion; that needs `setBehavior(...)`.
 
 ## Logical deletion at query time
 
-Mapping (`@LogicalDeleted`) is in the entity-mapping reference. Once mapped, Jimmer adds the "not deleted" predicate
+Mapping (`@LogicalDeleted`) is in `references/entity-mapping.md`. Once mapped, Jimmer adds the "not deleted" predicate
 to every query/fetch/statement and turns `deleteById`/`createDelete` into `UPDATE`s.
 
 ```kotlin
@@ -238,7 +238,7 @@ sqlClient.triggers.addEntityListener { e -> /* every entity type */ }
 - Transaction triggers run inside the transaction: an exception rolls it back; keep handlers fast. They require saves
   to select old rows (no native upsert) — use `TRANSACTION_ONLY` only when the DB has no CDC.
 - Cache invalidation is driven by `getTriggers(false)`. With `TRANSACTION_ONLY`, the Spring Boot starter defers cache
-  deletion until after commit (see cache reference).
+  deletion until after commit (see `references/cache.md`).
 - In `BOTH` mode a listener registered on both trigger objects runs twice; distinguish by `e.connection != null`.
 
 ## BinLog integration

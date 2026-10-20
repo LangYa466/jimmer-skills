@@ -301,7 +301,7 @@ At most **one** `@LogicalDeleted` property per entity. Effects: deleting the ent
 `generatorRef = "beanName"` implementing `LogicalDeletedValueGenerator<T>`.
 Join tables can have their own flag: `@JoinTable(logicalDeletedFilter = @JoinTable.LogicalDeletedFilter(columnName = "DELETED"))`;
 `@JoinTable(deletedWhenEndpointIsLogicallyDeleted = true)` physically deletes middle rows when an endpoint is
-logically deleted. Query-time behavior (ignore / reverse) → see filters reference.
+logically deleted. Query-time behavior (ignore / reverse) → see `references/filters-interceptors-events.md`.
 
 ## Calculated properties: @Formula and @Transient
 
@@ -355,7 +355,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
 - Without Spring, resolver classes need a no-arg constructor or a constructor taking `JSqlClient`.
 - Do not use object fetchers inside resolvers. For caching: override `getParameterMapRef()` and the
-  `getAffectedSourceIds(...)` callbacks (see cache reference).
+  `getAffectedSourceIds(...)` callbacks (see `references/cache.md`).
 - Experimental overload `resolve(Collection<ID> ids, TransientResolverContext ctx)` exposes the prop/connection.
 
 ## View properties: @IdView and @ManyToManyView
@@ -443,7 +443,7 @@ public interface Person extends Client { String firstName(); String lastName(); 
 
 - `@Inheritance` only on the root; one id; a type with subtypes but no `@DiscriminatorValue` is abstract.
 - JOINED: each subtype has `@Table`; `joinedTableDissociateAction = JoinedTableDissociateAction.LAX` when DB cascades.
-- Root queries return the concrete subtype objects; see query/save references for `TypeMatchMode`, `treatAs`, `forType`, `#types`.
+- Root queries return the concrete subtype objects; see `references/query-dsl.md` / `references/save-command.md` for `TypeMatchMode`, `treatAs`, `forType`, `#types`.
 - `@MappedSuperclass` is for property sharing only (no polymorphism). Table-per-class is not supported.
 
 ## Remote associations (microservices)

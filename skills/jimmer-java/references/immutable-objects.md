@@ -131,7 +131,7 @@ internally but shows `storeId` and hides `store`; fetching `fullName()` (a `@For
 - Use Jimmer's Jackson module (`ImmutableModuleV2` for Jackson 2, `ImmutableModuleV3` for Jackson 3); the Spring Boot
   starter registers it. Deserializing JSON into an entity yields an object whose loaded props are exactly the JSON fields
   — so a REST endpoint can accept a partial entity, but prefer **input DTOs** for public APIs (explicit contract, security).
-- `@JsonConverter` customizes serialization of a property (see entity-mapping).
+- `@JsonConverter` customizes serialization of a property (see `references/entity-mapping.md`).
 
 ## Equality
 

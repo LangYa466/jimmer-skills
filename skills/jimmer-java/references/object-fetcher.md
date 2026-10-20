@@ -124,7 +124,7 @@ t.fetch(null)                                            // a null fetcher means
 ```
 
 In Spring MVC, annotate return types with `@FetchBy("FETCHER_CONSTANT")` so generated OpenAPI/TypeScript types
-reflect the fetched shape (see spring-boot reference).
+reflect the fetched shape (see `references/spring-boot.md`).
 
 ## Output DTOs instead of fetchers
 
@@ -140,7 +140,7 @@ Book back = converted.toEntity();                        // DTO -> entity
 ```
 
 Association options for output DTOs are declared in the `.dto` file (`!fetchType(JOIN_ALWAYS)`, `!batch(n)`,
-`!limit(n)`, `!where(...)`, `!orderBy(...)`, `!filter(Class)`, `!depth(n)`, `!recursion(Class)`) — see dto-language.
+`!limit(n)`, `!where(...)`, `!orderBy(...)`, `!filter(Class)`, `!depth(n)`, `!recursion(Class)`) — see `references/dto-language.md`.
 
 Prefer returning entities + fetchers internally (no class explosion) and DTOs at API boundaries when you need a
 stable, documented type.

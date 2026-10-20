@@ -13,7 +13,7 @@
 
 | Need | API |
 |---|---|
-| Save an object or a whole object graph | save command (see save-command reference) |
+| Save an object or a whole object graph | save command (see `references/save-command.md`) |
 | Delete objects by id, honoring logical deletion and `@OnDissociate` | `deleteById` / `deleteByIds` / `getEntities().deleteCommand(...)` |
 | Set columns on all rows matching a predicate | `createUpdate(table)` |
 | Delete all rows matching a predicate | `createDelete(table)` |
@@ -214,4 +214,4 @@ sqlClient.saveCommand(Immutables.createBook(d -> d.setId(10L).setAuthorIds(List.
 ```
 
 Query middle tables with `sqlClient.createQuery(AssociationTable.of(BookTableEx.class, BookTableEx::authors))`
-(see query-dsl).
+(see `references/query-dsl.md`).

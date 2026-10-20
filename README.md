@@ -34,6 +34,19 @@ The skills load automatically when you work on Jimmer code, or explicitly as `/j
 `/jimmer-skills:jimmer-kotlin`. To use a skill without the plugin system, copy its folder into
 `~/.claude/skills/` (or `.claude/skills/` in a project).
 
+## Skill format
+
+Both skills follow the [Agent Skills specification](https://agentskills.io/specification): a directory named
+after the skill with a `SKILL.md` (YAML frontmatter with `name`, `description`, `license`, `metadata`, then
+instructions under 500 lines) and on-demand `references/` one level deep. CI validates them with the reference
+validator:
+
+```bash
+pip install skills-ref
+agentskills validate skills/jimmer-java
+agentskills validate skills/jimmer-kotlin
+```
+
 ## What the skills cover
 
 Each skill has a short `SKILL.md` (mental model, quick start, critical rules, task router, templates) and focused
@@ -51,7 +64,7 @@ references that are loaded only when needed:
 | `delete-and-dml` | delete commands, update/delete statements, insert/upsert from a query, middle-table API |
 | `filters-interceptors-events` | global filters, logical-deletion behavior, `DraftInterceptor`/`DraftPreProcessor`, triggers, binlog |
 | `cache` | object/association/calculated/multi-view caches, Redis + Caffeine, invalidation |
-| `spring-boot` | starter properties, repositories, transactions, `@FetchBy`, error families, OpenAPI/TypeScript, multiple data sources |
+| `spring-boot` | starter properties, repositories, transactions, `@FetchBy`, error families, OpenAPI/TypeScript, Spring GraphQL, multiple data sources |
 | `pitfalls` | compile errors, runtime exceptions, silent wrong results, API changes, review checklist |
 
 ### Notable 0.12.4 behaviors documented in the skills
@@ -73,9 +86,9 @@ references that are loaded only when needed:
 | Project | Content |
 |---|---|
 | `verification/java` | plain Java + H2: mapping, queries, fetchers, DTOs, saves, DML, filters, triggers, binlog, cache |
-| `verification/java-spring` | Spring Boot starter (Java): repositories, `@FetchBy`, error families, OpenAPI, TypeScript |
+| `verification/java-spring` | Spring Boot starter (Java): repositories, `@FetchBy`, error families, OpenAPI, TypeScript, Spring GraphQL |
 | `verification/kotlin` | plain Kotlin + KSP + H2: the same topics for the Kotlin API |
-| `verification/kotlin-spring` | Spring Boot starter (Kotlin): `AbstractKotlinRepository`, `KRepository`, `KCustomizer`, OpenAPI, TypeScript |
+| `verification/kotlin-spring` | Spring Boot starter (Kotlin): `AbstractKotlinRepository`, `KRepository`, `KCustomizer`, OpenAPI, TypeScript, Spring GraphQL |
 
 `verification/java` and `verification/kotlin` contain `behavior/KnownBehaviorTest`, which pins the surprising 0.12.4
 behaviors listed above (the Spring projects assert the repository/starter ones); if one fails after a Jimmer upgrade,
@@ -85,7 +98,7 @@ the skills need updating. Run a project with Gradle 8.14+ and JDK 21:
 cd verification/kotlin && gradle test
 ```
 
-CI runs all four projects on every push and pull request.
+CI runs all four projects and the skill validator on every push and pull request.
 
 ## Contributing
 

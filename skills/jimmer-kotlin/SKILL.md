@@ -1,6 +1,12 @@
 ---
 name: jimmer-kotlin
 description: Expert guide for the Jimmer ORM (babyfish-ct/jimmer, org.babyfish.jimmer) with the Kotlin API — KSqlClient, newKSqlClient, @Entity interfaces with val properties, Book { } / copy { } drafts, generated table extension properties and fetchBy/newFetcher DSL from jimmer-ksp, typed SQL DSL (eq, `eq?`, valueIn, subQuery), object fetchers, the .dto DTO language (view/input/specification), save commands (SaveMode/AssociatedSaveMode), delete/update statements, KFilter global filters, logical deletion, DraftInterceptor, cache, jimmer-spring-boot-starter (jimmer.language=kotlin, KRepository, AbstractKotlinRepository), OpenAPI/TypeScript client generation. Use whenever writing, reviewing, debugging or migrating Kotlin code that uses Jimmer, or when the user mentions Jimmer, babyfish, KSqlClient, KSP, jimmer-ksp or src/main/dto in a Kotlin project. 适用于 Jimmer ORM Kotlin 开发、实体映射、DTO 语言、保存指令、查询 DSL。
+license: MIT
+metadata:
+  author: LangYa466
+  version: "1.0.0"
+  jimmer-version: "0.12.4"
+  repository: https://github.com/LangYa466/jimmer-skills
 ---
 
 # Jimmer ORM — Kotlin
@@ -136,7 +142,7 @@ val id = sqlClient.save(Book {
 | Deleting, `createUpdate`/`createDelete`, insert/upsert from a query, association (middle table) API | [references/delete-and-dml.md](references/delete-and-dml.md) |
 | `KFilter`, logical deletion behavior, `DraftInterceptor`/`DraftPreProcessor`, triggers, binlog | [references/filters-interceptors-events.md](references/filters-interceptors-events.md) |
 | Caching (object/association/calculated/multi-view), Redis/Caffeine, `AbstractKCacheFactory` | [references/cache.md](references/cache.md) |
-| Spring Boot starter, `AbstractKotlinRepository`, `KRepository`, `@FetchBy`, error families, OpenAPI/TypeScript, multiple data sources | [references/spring-boot.md](references/spring-boot.md) |
+| Spring Boot starter, `AbstractKotlinRepository`, `KRepository`, `@FetchBy`, error families, OpenAPI/TypeScript, Spring GraphQL, multiple data sources | [references/spring-boot.md](references/spring-boot.md) |
 | Compile errors, runtime exceptions, migration from older versions, review checklist | [references/pitfalls.md](references/pitfalls.md) |
 
 ## Everyday templates

@@ -10,6 +10,7 @@
 - [REST controllers returning entities (@FetchBy)](#rest-controllers-returning-entities-fetchby)
 - [Error families → typed client errors](#error-families--typed-client-errors)
 - [OpenAPI, Swagger UI and TypeScript](#openapi-swagger-ui-and-typescript)
+- [Spring GraphQL](#spring-graphql)
 - [Multiple data sources](#multiple-data-sources)
 
 ## Dependencies
@@ -38,7 +39,7 @@ kotlin {
 }
 ```
 
-KSP setup details (generated source dir, re-running KSP after `.dto` edits) are in setup-and-config. Put
+KSP setup details (generated source dir, re-running KSP after `.dto` edits) are in `references/setup-and-config.md`. Put
 `@EnableImplicitApi` (`org.babyfish.jimmer.client`) on the application class to export all controllers.
 
 ## What the starter does
@@ -79,9 +80,49 @@ jimmer:
       path: /ts.zip
 ```
 
-All other `jimmer.*` properties (batch sizes, `id-only-target-checking-level`, `dissociation-logical-delete-enabled`,
-`error-translator.*`, `client.ts.*`, ...) are the same as for Java — see the property table in the jimmer-java
-skill's spring-boot reference, or `JimmerProperties` in the starter.
+All properties (`org.babyfish.jimmer.spring.cfg.JimmerProperties`):
+
+| Property | Default | Meaning |
+|---|---|---|
+| `jimmer.language` | `java` | **must be `kotlin`** to create a `KSqlClient` |
+| `jimmer.dialect` | auto-detected | e.g. `org.babyfish.jimmer.sql.dialect.PostgresDialect` |
+| `jimmer.show-sql` / `pretty-sql` / `inline-sql-variables` | `false` | SQL log; `pretty-sql` requires `show-sql`, `inline-sql-variables` requires `pretty-sql` |
+| `jimmer.executor-context-prefixes` | — | packages whose stack frames are appended to SQL logs |
+| `jimmer.database-validation-mode` | `NONE` | `WARNING`/`ERROR`: compare entities with DB metadata at startup |
+| `jimmer.trigger-type` | `BINLOG_ONLY` | `TRANSACTION_ONLY`, `BOTH` |
+| `jimmer.default-reference-fetch-type` | `SELECT` | `JOIN_IF_NO_CACHE`, `JOIN_ALWAYS` |
+| `jimmer.max-join-fetch-depth` | `3` | |
+| `jimmer.default-batch-size` / `default-list-batch-size` | `128` / `16` | fetcher batch sizes |
+| `jimmer.default-enum-strategy` | `NAME` | `ORDINAL` |
+| `jimmer.default-schema` | `""` | |
+| `jimmer.jdbc.default-fetch-size` / `default-query-timeout` | — | JDBC statement settings |
+| `jimmer.in-list-padding-enabled` / `expanded-in-list-padding-enabled` | `false` | pad `IN` lists for statement caching |
+| `jimmer.offset-optimizing-threshold` | `Integer.MAX_VALUE` | deep-paging optimization threshold |
+| `jimmer.reverse-sort-optimization-enabled` | `false` | reverse sort for last pages |
+| `jimmer.is-foreign-key-enabled-by-default` | `true` | treat undeclared FKs as real |
+| `jimmer.id-only-target-checking-level` | `NONE` | `FAKE`, `ALL` |
+| `jimmer.default-dissociation-action-checkable` | `true` | `NONE` dissociation = `CHECK` |
+| `jimmer.dissociation-logical-delete-enabled` | `false` | logically delete dissociated children |
+| `jimmer.target-transferable` | `false` | allow re-parenting children in saves |
+| `jimmer.default-type-change-allowed` | `false` | allow changing an inheritance subtype in saves |
+| `jimmer.max-command-join-count` | `2` | |
+| `jimmer.mutation-transaction-required` | `false` | fail mutations outside a transaction |
+| `jimmer.default-save-returning-enabled` | `true` | use DML `returning` for save results |
+| `jimmer.default-save-result-reads-all-properties` | `false` | re-read written values |
+| `jimmer.explicit-batch-enabled` / `dumb-batch-acceptable` | `false` | MySQL JDBC batches |
+| `jimmer.constraint-violation-translatable` | `true` | translate unique violations to `SaveException.NotUnique` |
+| `jimmer.transaction-cache-operator-fixed-delay` | `5000` | ms between retries of deferred cache deletions (`TRANSACTION_ONLY`) |
+| `jimmer.micro-service-name` | `""` | for remote associations |
+| `jimmer.error-translator.disabled` | `false` | disable `@ErrorFamily` → JSON translation |
+| `jimmer.error-translator.http-status` | `500` | HTTP status of translated errors |
+| `jimmer.error-translator.debug-info-supported` / `debug-info-max-stack-trace-count` | `false` / `Integer.MAX_VALUE` | include messages/stack traces (never in production) |
+| `jimmer.client.uri-prefix` | — | prefix added to generated client URLs |
+| `jimmer.client.ts.path` | — | e.g. `/ts.zip`; enables TypeScript download |
+| `jimmer.client.ts.api-name` / `indent` / `mutable` / `null-render-mode` / `is-enum-ts-style` | `Api` / `4` / `false` / `UNDEFINED` / `false` | TypeScript options |
+| `jimmer.client.openapi.path` | — | e.g. `/openapi.yml`; enables the OpenAPI document |
+| `jimmer.client.openapi.ui-path` | — | e.g. `/openapi.html`; enables the UI page |
+| `jimmer.client.openapi.properties.*` | — | `info.title/description/version`, `servers`, `securities`, `components` … |
+| `jimmer.client.java-feign.path` / `api-name` / `indent` / `base-package` | — | download Spring Cloud Feign client code |
 
 ## Customizing the KSqlClient
 
@@ -281,6 +322,47 @@ The starter renders `{"family":"USER_INFO","code":"PASSWORD_TOO_SHORT", ...field
   `model/static/*.ts` (DTO classes) and `model/enums/*.ts`.
 - Both endpoints stream; in `MockMvc` tests use `mvc.perform(asyncDispatch(mvc.perform(get("/openapi.yml")).andReturn()))`.
 - KDoc on controllers, entities and DTOs becomes descriptions.
+
+## Spring GraphQL
+
+With `spring-boot-starter-graphql` on the classpath, the starter's `JimmerSpringGraphQLAutoConfiguration` wires every
+entity into Spring GraphQL: each property gets a data fetcher, and every association and `@Transient`-resolver property
+gets a batch loader. Clients can request any association or calculated property — no `@SchemaMapping`/`@BatchMapping`
+code, no N+1. Only the root query is yours to write.
+
+```graphql
+# src/main/resources/graphql/schema.graphqls — type names = entity names, field names = property names
+type Query { books(name: String): [Book!]! }
+type Mutation { saveBook(input: BookInput!): Book! }
+type Book { id: Int! name: String! edition: Int! price: Float! store: BookStore authors: [Author!]! }
+type BookStore { id: Int! name: String! books: [Book!]! }
+type Author { id: Int! firstName: String! lastName: String! }
+input BookInput { name: String! edition: Int! price: Float! storeId: Int authorIds: [Int!]! }
+```
+
+```kotlin
+@Controller
+class BookGraphQLController(private val sqlClient: KSqlClient) {
+
+    @QueryMapping
+    fun books(@Argument name: String?, env: DataFetchingEnvironment): List<Book> =
+        sqlClient.createQuery(Book::class) {
+            where(table.name `ilike?` name)
+            select(table.fetch(env.toFetcher<Book>()))    // org.babyfish.jimmer.spring.graphql.toFetcher: requested scalars only
+        }.execute()
+
+    @MutationMapping
+    @Transactional
+    fun saveBook(@Argument input: BookInput): Book =      // input DTO generated from a .dto file
+        sqlClient.save(input).modifiedEntity
+}
+```
+
+- Returning `select(table)` also works — associations are still loaded on demand — but loads every scalar column.
+- `Long`, `BigDecimal`, `LocalDateTime` are not built-in GraphQL scalars. The schema above maps them to `Int`/`Float`
+  (values are coerced); for exact types register custom scalars with a `RuntimeWiringConfigurer` bean
+  (e.g. `graphql-java-extended-scalars`). Properties missing from the schema are simply not exposed.
+- GraphQL cannot express recursive fetches (`` `childNodes*` ``); clients nest explicitly.
 
 ## Multiple data sources
 
