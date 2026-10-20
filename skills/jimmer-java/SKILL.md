@@ -84,20 +84,20 @@ long id = sqlClient.save(Immutables.createBook(d -> {
 
 ## Critical rules (read first)
 
-1. **No `insert()/update()/merge()` on `JSqlClient` in 0.12.** Use `save(entity)` (UPSERT + REPLACE), `save(entity, SaveMode, AssociatedSaveMode)` or `saveCommand(entity).setMode(SaveMode.UPDATE_ONLY).execute()`. (`insert/update/merge/insertIfAbsent` exist only on repository abstractions: `JavaRepository`/`AbstractJavaRepository`, `JRepository`.)
+1. **No `insert()/update()/merge()` on `JSqlClient` in 0.12.** Use `save(entity)` (UPSERT + REPLACE), `save(entity, SaveMode, AssociatedSaveMode)` or `saveCommand(entity).setMode(SaveMode.UPDATE_ONLY).execute()`. (`insert/update/merge/insertIfAbsent` survive only as `@Deprecated` shortcuts on `JavaRepository`/`AbstractJavaRepository` and `JRepository`.)
 2. **Java nullity:** primitives are non-null, boxed types are nullable, every other type is **non-null unless annotated with an annotation named `@Nullable`/`@Null`** (prefer `org.jetbrains.annotations.Nullable`). `@Id` must be non-null; `@OneToMany`/`@ManyToMany` lists are non-null. A `@ManyToOne` via join table, fake FK, filtered target or remote association must be `@Nullable`.
 3. **Unloaded ≠ null.** For saves: unloaded props are left unchanged; `null` writes NULL. For queries: only fetched props are loaded. Check with `ImmutableObjects.isLoaded(obj, BookProps.STORE)`.
 4. **`save()` defaults to `SaveMode.UPSERT` + `AssociatedSaveMode.REPLACE`.** REPLACE dissociates associated rows missing from the collection you pass. Use `AssociatedSaveMode.MERGE`/`APPEND` when you only add.
 5. **Objects without id need complete `@Key` values** (or `setKeyProps(...)`, or `INSERT_ONLY`/`NON_IDEMPOTENT_UPSERT`), otherwise `SaveException.NeitherIdNorKey`. With a key containing a `@ManyToOne` (e.g. `TreeNode(name, parent)`), the root object must set `parent` explicitly (even to `null`); children get it implicitly.
 6. **`@Formula` lives in `org.babyfish.jimmer.Formula`** (not `...sql`). Java formulas are `default` methods with `dependencies`; only SQL formulas (`@Formula(sql = "...%alias...")`) are usable in the DSL.
 7. **Top-level queries cannot join collection associations** — use implicit subqueries `table.authors(a -> ...)`, real subqueries, or `table.asTableEx().authors()` (+ `distinct()`).
-8. **Static predicates treat `null` specially:** `eq(null)` → `is null`; other operators reject `null`. Use dynamic predicates (`eqIf`, `ilikeIf`, `betweenIf`, …) for optional filters. `inIf(null)` is skipped, but `inIf(emptyList)` matches no rows.
+8. **Static predicates treat `null` specially:** `eq(null)` → `is null`, `ne(null)` → `is not null`; other operators reject `null`. Use dynamic predicates (`eqIf`, `ilikeIf`, `betweenIf`, …) for optional filters. `inIf(null)` is skipped, but `inIf(emptyList)` matches no rows.
 9. **`findById` returns `null` if absent; `findOneById` throws.** Without an object cache they run a normal query, so global filters and logical deletion apply. With an object cache, a cache *hit* is returned without re-checking filters (a miss is loaded with filters) — use an explicit query when filter semantics matter.
 10. **Jackson:** in 0.12 the module is `org.babyfish.jimmer.jackson.v2.ImmutableModuleV2` (Jackson 2) or `...v3.ImmutableModuleV3` (Jackson 3). The old `ImmutableModule` class no longer exists. The starter registers them automatically.
 11. **Projects without entities but with `.dto` files** (or Web controllers for client generation) still need `jimmer-apt`, and Java needs `@EnableDtoGeneration` on any class in that module.
 12. **`@TypedTuple` must be a class** with an explicit all-args constructor (or no-arg constructor) — Java `record`s are rejected by jimmer-apt 0.12.4.
 13. **REST client exceptions are declared with Java `throws XxxException`** (exception classes generated from `@ErrorFamily` enums). There is no `@ThrowsAll` in 0.12.
-14. **Keep the column on the left of comparisons** (`t.price().lt(x)`, `table.price().lt(values.newNumber(P))`). 0.12.4 renders a constant-on-the-left comparison such as `Expression.numeric().value(x).gt(col)` with the *negated* operator (`col <= x`) — silently wrong results.
+14. **Keep the column on the left of comparisons** (`t.price().lt(x)`, `table.price().lt(values.newNumber(P))`). 0.12.4 renders a constant-on-the-left comparison such as `Expression.value(x).gt(col)` with the *negated* operator (`col <= x`) — silently wrong results.
 15. **Spring Data `JRepository` derived-query parameters are dynamic only with `@DynamicParam`**; a null argument otherwise throws `NullPointerException`.
 16. **`ExceptionTranslator`s must be anonymous or named classes** — a lambda fails at runtime ("Illegal exception translator type").
 

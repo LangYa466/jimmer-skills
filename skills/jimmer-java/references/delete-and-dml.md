@@ -63,7 +63,7 @@ Physically deleting a parent first handles its children:
 - Middle-table associations (`Book.authors`): the middle-table rows are deleted.
 - One-to-many through a FK (`BookStore.books`): Jimmer queries the children and applies the `@OnDissociate` action of
   the many-to-one property (`Book.store`) or the command override:
-  - `NONE` → `CHECK` by default (or `LAX` for fake FKs when `setDefaultDissociateActionCheckable(false)`)
+  - `NONE` → `CHECK` by default, `LAX` when `setDefaultDissociateActionCheckable(false)` (real and fake FKs alike)
   - `CHECK` → throw if children exist
   - `LAX` → do nothing (rely on `ON DELETE CASCADE`/no FK)
   - `SET_NULL` → null out child FKs
@@ -102,8 +102,9 @@ try (Stream<Tuple2<Long, String>> s = sqlClient.createUpdate(author)
   `sqlClient.filters(cfg -> cfg.disableAll())` disables **user** filters only; logically deleted rows additionally
   need `sqlClient.filters(cfg -> cfg.setBehavior(LogicalDeletedBehavior.IGNORED))`.
 - `whereIf(condition, () -> predicate)` adds a predicate conditionally.
-- Joins in updates (e.g. `authorEx.books().store().name().eq(...)`) are only supported by `MySqlDialect` and
-  `PostgresDialect` (Postgres: first-level joins must be inner). Elsewhere use a subquery in `where`.
+- Joins in updates (e.g. `authorEx.books().store().name().eq(...)`) are only supported by the MySQL-style dialects
+  (`MySqlDialect`, `MySql5Dialect`, `TiDBDialect`), `PostgresDialect` and `SQLiteDialect` (Postgres/SQLite: first-level
+  joins must be inner). Elsewhere use a subquery in `where`.
 - `returning(...)` accepts physical columns of the updated table (or a typed-tuple mapper) and is only supported by
   `H2Dialect` and `PostgresDialect`.
 

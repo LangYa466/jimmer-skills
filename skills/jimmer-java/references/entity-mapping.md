@@ -174,7 +174,7 @@ List<Author> authors();
 `AUTO` (default) = real unless the dialect has no FKs (TiDB) or `setForeignKeyEnabledByDefault(false)` /
 `jimmer.is-foreign-key-enabled-by-default=false`. Fake FKs make Jimmer verify referential integrity itself.
 
-`@OnDissociate` (only on FK-based `@ManyToOne`) decides what happens to children that a parent no longer references
+`@OnDissociate` (on FK-based `@ManyToOne` / owning `@OneToOne` props) decides what happens to children that a parent no longer references
 (during save with REPLACE, or when deleting the parent):
 
 ```java
@@ -184,7 +184,8 @@ List<Author> authors();
 BookStore store();
 ```
 
-- `NONE`: uses global `default-dissociate-action-checking` (true → `CHECK`); fake FK + checking disabled → `LAX`.
+- `NONE`: uses the global `setDefaultDissociateActionCheckable(...)` / `jimmer.default-dissociation-action-checkable`
+  (default `true` → `CHECK`, `false` → `LAX`, for real and fake FKs alike; with a real FK the database then rejects it).
 - `LAX`: do nothing (DB cascade or dangling fake FK). `CHECK`: throw if children exist. `SET_NULL`: requires a nullable FK.
   `DELETE`: delete children (recursively applies their own rules).
 - Override per command: `saveCommand(...).setDissociateAction(BookProps.STORE, DissociateAction.DELETE)`.
@@ -441,7 +442,9 @@ public interface Organization extends Client { String taxCode(); }
 public interface Person extends Client { String firstName(); String lastName(); }
 ```
 
-- `@Inheritance` only on the root; one id; a type with subtypes but no `@DiscriminatorValue` is abstract.
+- `@Inheritance` only on the root; one id. With the default `@Entity(instantiability = AUTO)` the root is abstract
+  and subtypes are instantiable; override with `EntityInstantiability.ABSTRACT`/`INSTANTIABLE`. The discriminator
+  value defaults to the simple class name.
 - JOINED: each subtype has `@Table`; `joinedTableDissociateAction = JoinedTableDissociateAction.LAX` when DB cascades.
 - Root queries return the concrete subtype objects; see `references/query-dsl.md` / `references/save-command.md` for `TypeMatchMode`, `treatAs`, `forType`, `#types`.
 - `@MappedSuperclass` is for property sharing only (no polymorphism). Table-per-class is not supported.

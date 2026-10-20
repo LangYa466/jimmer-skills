@@ -103,7 +103,9 @@ BookView {
 }
 ```
 `as(...)` patterns: `^ -> p` add prefix, `^p ->` remove prefix, `^p -> q` replace prefix, `$ -> s` add suffix,
-`$s ->` remove suffix, `$s -> t` replace suffix, `x ->` remove infix, `x -> y` replace infix (`^` and `$` cannot be combined).
+`s $ ->` remove suffix, `s $ -> t` replace suffix (the space before `$` is required: `$` is a legal identifier
+character), `x ->` remove infix, `x -> y` replace infix (`^` and `$` cannot be combined). Example:
+`as(Time $ -> At) { createdTime }` → `createdAt`.
 
 ## Associations: nested, id(), recursive, flat, fold
 
@@ -181,12 +183,13 @@ import javax.validation.constraints.Size
 @SomeTypeAnnotation
 input BookInput implements com.example.HasName {
     #allScalars
-    @Size(min = 2, max = 50) name           // annotation on a mapped prop (replaces annotations copied from the entity)
+    @Size(min = 2, max = 50) name           // annotation on a mapped prop (replaces an entity annotation of the same type)
     @Size(max = 200) remark: String         // annotation on a user prop
     @A authors @B { id }                    // @A on the property, @B on the generated nested type
 }
 ```
-- When a mapped prop has no annotation in the DTO, its entity annotations are copied (except Jimmer's own ORM annotations).
+- Entity annotations of a mapped prop are copied unless the DTO prop declares an annotation of the same type; Jimmer's
+  own annotations (except `org.babyfish.jimmer.client.*`) are never copied.
 - Annotation arguments accept Java style (`{ }`) and Kotlin style (`[ ]`) arrays; `value` may be positional.
 - `implements` adds interfaces to the generated class (and to nested types: `store implements X { ... }`); props that
   match interface methods get `@Override`.

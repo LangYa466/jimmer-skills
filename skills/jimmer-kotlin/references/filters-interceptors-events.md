@@ -55,8 +55,8 @@ Rules:
   filter on the target implements `KAssociationIntegrityAssuranceFilter` *and* also applies to the source entity.
 - Fetcher-loaded associations are filtered too (`store.books` only contains the current tenant's books); with caches
   enabled, filtered associations need `KCacheableFilter` (multi-view cache) — see `references/cache.md`.
-- `findById`/`findByIds` apply filters when no object cache is configured; with an object cache the root lookup
-  ignores filters unless the filter implements `KShardingFilter`.
+- `findById`/`findByIds` apply filters when no object cache is configured; with an object cache a cache **hit** is
+  returned without re-checking filters (misses are loaded with filters) unless the filter implements `KShardingFilter`.
 
 ## Filter marker interfaces
 
@@ -237,8 +237,8 @@ sqlClient.triggers.addEntityListener { e -> /* every entity type */ }
 - Changing a FK (`Book.store`) also fires association events for both `Book::store` and the inverse `BookStore::books`.
 - Transaction triggers run inside the transaction: an exception rolls it back; keep handlers fast. They require saves
   to select old rows (no native upsert) — use `TRANSACTION_ONLY` only when the DB has no CDC.
-- Cache invalidation is driven by `getTriggers(false)`. With `TRANSACTION_ONLY`, the Spring Boot starter defers cache
-  deletion until after commit (see `references/cache.md`).
+- Cache invalidation is driven by `getTriggers(false)`. With `TRANSACTION_ONLY`, cache entries are deleted inside the
+  transaction unless you configure a `TransactionCacheOperator` (see `references/cache.md`).
 - In `BOTH` mode a listener registered on both trigger objects runs twice; distinguish by `e.connection != null`.
 
 ## BinLog integration

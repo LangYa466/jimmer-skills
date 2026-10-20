@@ -30,7 +30,7 @@ INSERT/UPDATE/DELETE statements.
 | repository `save(entity, SaveMode.X)` (`KotlinRepository`) | `X` | `REPLACE` |
 
 The `save(entity, mode)` / `saveCommand(entity, mode)` defaults differ — pass the `AssociatedSaveMode` explicitly
-whenever associations are loaded. There is no `insert`/`update`/`merge` on `KSqlClient` (repositories have them).
+whenever associations are loaded. There is no `insert`/`update`/`merge` on `KSqlClient` (repositories still have them, all `@Deprecated`).
 
 ```kotlin
 sqlClient.save(book)                                                    // UPSERT + REPLACE
@@ -54,7 +54,7 @@ When the mode is passed as an argument, the lambda is a `KSaveCommandPartialDsl`
 - Associated object shape: **id-only** = link only; **key-only** + `setKeyOnlyAsReference(...)` = link by key;
   anything else = the target is saved too (recursively).
 - Classification: id-specified (id loaded) / key-specified (complete `@Key` group) / wild (neither → rejected with
-  `SaveException.NeitherIdNorKey` unless `INSERT_ONLY`, `INSERT_IF_ABSENT`, `NON_IDEMPOTENT_UPSERT`).
+  `SaveException.NeitherIdNorKey` unless `INSERT_ONLY` or `NON_IDEMPOTENT_UPSERT`; `INSERT_IF_ABSENT` rejects them too).
 - Forward associations (FK on this table) are saved before the owner, backward ones (one-to-many, many-to-many)
   after it. Both sides of a bidirectional association can be saved.
 - Children saved through a `mappedBy` list get their back reference automatically; the **root** of a structure keyed by
@@ -113,11 +113,11 @@ follow `@OnDissociate` of the many-to-one (`Book.store`) or the override:
 
 | DissociateAction | Effect |
 |---|---|
-| `NONE` (default) | `CHECK` (default) or `LAX` for fake FKs when checking is disabled |
+| `NONE` (default) | `CHECK`, or `LAX` when `setDefaultDissociateActionChecking(false)` (real and fake FKs alike) |
 | `LAX` | nothing (treated as `CHECK` under `REPLACE`) |
 | `CHECK` | throw `SaveException.CannotDissociateTarget` |
 | `SET_NULL` | clear the child FK (prop must be nullable) |
-| `DELETE` | delete children recursively; logically only with `setDissociationLogicalDeleteEnabled(true)`, a fake FK, or a logically deleted parent |
+| `DELETE` | delete children recursively; logically only when enabled (per command `setEnabled(true)`, globally `setDissociationLogicalDeleteEnabled(true)`), with a fake FK, or under a logically deleted parent |
 
 ```kotlin
 sqlClient.save(store) {
@@ -172,7 +172,7 @@ if (!r.isAccepted) { /* rejected, not an error */ }
 
 sqlClient.save(Book { id = 1L; price = BigDecimal("5") }, SaveMode.UPDATE_ONLY) {
     set(Book::price) { target.price + newNonNull(Book::price) }          // SQL-computed assignment
-    // setNullable(Book::store...) for nullable targets; newNullable(prop) for nullable inputs
+    // setNullable(BookStore::website) { ... } for nullable scalar targets; newNullable(prop) for nullable inputs
 }
 
 sqlClient.save(store) {
@@ -216,7 +216,8 @@ sqlClient.transaction {
 }
 ```
 
-Entities with `@Version` never use native upsert.
+A loaded `@Version` (or `setOptimisticLock`) makes upserts select first (reason `OPTIMISTIC_LOCK`), except on dialects
+that support upsert with an optimistic-lock check (`PostgresDialect`).
 
 ## Saving input DTOs
 
@@ -262,7 +263,8 @@ Constraint violations are investigated and translated to `NotUnique` by default
 ## Batching, MySQL, transactions, global defaults
 
 - Saves are batched per type and shape. MySQL batches need `rewriteBatchedStatements=true`, `setExplicitBatchEnabled(true)`
-  and `setDumbBatchAcceptable(true)` (per command preferred).
+  and dumb-batch acceptance: per command `setDumbBatchAcceptable(true)` (preferred) or globally `setAcceptable(true)` in
+  `newKSqlClient { }` (the Kotlin name of Java's `setDumbBatchAcceptable`).
 - Run graph saves inside `sqlClient.transaction { }` or Spring `@Transactional`; `setTransactionRequired(true)` /
   global `setMutationTransactionRequired(true)` fail fast without a transaction.
 - Global (`newKSqlClient { }` / Spring properties): `setTargetTransferable` (false), `setDefaultDissociateActionChecking`
@@ -274,7 +276,7 @@ Constraint violations are investigated and translated to `NotUnique` by default
 `setMode`, `setAssociatedModeAll`, `setAssociatedMode(prop, mode)`, `setKeyProps(...)`, `matchByKey()`,
 `setUpsertMask(...)`, `forbidUpdate()`, `setUpdateWhere(Type::class) { }`, `set(prop) { }`, `setNullable(prop) { }`,
 `setVersionMode`, `setOptimisticLock(Type::class[, behavior]) { }`, `setPessimisticLock(Type::class)`,
-`setPessimisticLockAll()`, `setDissociateAction(prop, action)`, `setDissociationLogicalDeleteEnabled`,
+`setPessimisticLockAll()`, `setDissociateAction(prop, action)`, `setEnabled(bool)` (dissociation logical delete),
 `setTargetTransferMode(prop, mode)`, `setTargetTransferModeAll`, `setIdOnlyAsReference[All]`,
 `setKeyOnlyAsReference[All]`, `setAutoIdOnlyTargetChecking[All]`, `setDeleteMode`, `setTypeMatchMode`,
 `setTypeChangeAllowed`, `setSaveReturningEnabled`, `setSaveResultReadsAllProperties`,

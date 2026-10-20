@@ -56,7 +56,7 @@ newFetcher(Book::class).by {
     }
     authors({                                       // first lambda: field config, second: child shape
         batch(32)                                   // ids per secondary query (defaults: 128 refs, 16 lists)
-        limit(10)                                   // per-parent paging (limit, offset = 0); disables batching
+        limit(10)                                   // per-parent paging (limit, offset = 0): UNION ALL of per-parent sub-selects
         filter {                                    // property-level where/orderBy
             where(table.firstName ilike "a")
             orderBy(table.lastName)
@@ -71,7 +71,7 @@ newFetcher(Book::class).by {
 | Config | Applies to | Meaning |
 |---|---|---|
 | `batch(n)` | all associations | batch size of secondary queries |
-| `filter { where(...); orderBy(...) }` | all associations | filter/sort associated rows (bypasses association caches) |
+| `filter { where(...); orderBy(...) }` | lists, nullable references | filter/sort associated rows (bypasses association caches; rejected on non-null references) |
 | `limit(limit, offset)` | lists | per-parent pagination |
 | `fetchType(ReferenceFetchType)` | references | `SELECT` (default), `JOIN_IF_NO_CACHE`, `JOIN_ALWAYS`, `AUTO` |
 | `depth(n)` / `recursive { ... }` | recursive props | see below |
@@ -151,5 +151,5 @@ needs `org.antlr:antlr4-runtime:4.13.0` at runtime. Only for trusted callers.
 
 - One extra query per fetched association per batch; use `JOIN_ALWAYS` for small many-to-one lookups.
 - Global filters and logical deletion apply to fetched associations.
-- `limit(...)` on a list field means one query per parent.
+- `limit(...)` on a list field turns each batch into a `UNION ALL` of per-parent limited sub-selects — heavier SQL.
 - With association caches, include the association's `orderedProps` in the child fetcher (see `references/cache.md`).

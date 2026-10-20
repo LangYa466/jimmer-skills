@@ -24,7 +24,7 @@ error, runtime exception or surprising result shows up, and as a checklist when 
 | `'val' cannot be reassigned` inside `Book { name = … }` | a local variable/parameter with the same name (`name`, `price`, …) shadows the draft property; write `this.name = …` or rename the local |
 | Type mismatch `Long?` vs `Long` in `select(...)`/tuples | nullable expressions (`table.storeId`, `max(...)`, `avgAsDecimal(...)`, outer-joined props) need `.asNonNull()` for non-null slots |
 | `avg()` result is `Double` | `avgAsDecimal(...)` for `BigDecimal` |
-| `Cannot access 'source'` on an association table | use the functions `source()` / `target()` (or `sourceId`/`targetId`) |
+| `Cannot access 'source'` on an `Association` row (association-table query result) | use the functions `source()` / `target()` (or `sourceId`/`targetId`) |
 | `Not enough information to infer type variable K` in `creator.createForObject(type)` | pass type arguments: `createForObject<Any, Any>(type)`, `createForProp<Any, List<*>>(prop, multiView)` |
 | `None of the following candidates is applicable: save(...)` on a `KotlinRepository` | no `save(entity, associatedMode)` overload; use `save(entity, SaveMode.X, AssociatedSaveMode.Y)` |
 | `disableAll()` unresolved inside `sqlClient.filters { }` | `KFilterDsl` has no `disableAll()`; `disableByTypes(...)` / `setBehavior(...)` |
@@ -45,8 +45,8 @@ error, runtime exception or surprising result shows up, and as a checklist when 
 | `No qualifying bean of type 'KSqlClient'` (Spring) | set `jimmer.language: kotlin`; the default creates a `JSqlClient` |
 | `UnsupportedOperationException` in `createInsert(Book::authors, source)` | middle-table insert-from-select needs a rootless source (`createBaseQuery { select(...constants) }`) |
 | `IllegalArgumentException: Illegal json` from `binLog.accept(...)` (cause `Integer cannot be cast to BigDecimal`) | 0.12.4 reads `BigDecimal`/`BigInteger` binlog values with `asInt()`; register `setBinLogPropReader(BigDecimal::class) { _, n -> BigDecimal(n.castTo(String::class.java)) }` |
-| `IllegalStateException` from `sqlClient.transaction { }` | needs a Jimmer `TxConnectionManager`; under Spring use `@Transactional` |
-| Update with join fails | joins in `createUpdate` only for `MySqlDialect`/`PostgresDialect`; use a subquery |
+| `IllegalStateException` from `sqlClient.transaction { }` | needs a `TxConnectionManager` (e.g. `simpleConnectionManager`); under the Spring starter it needs a `DataSourceTransactionManager` bean — or just use `@Transactional` |
+| Update with join fails | joins in `createUpdate` only for the MySQL-style dialects, `PostgresDialect` and `SQLiteDialect`; use a subquery |
 | `returning(...)` unsupported | DML returning: `H2Dialect`, `PostgresDialect` |
 | `NoClassDefFoundError: org/antlr/...` with `FetcherCompiler` | add `org.antlr:antlr4-runtime:4.13.0` |
 
@@ -84,7 +84,7 @@ error, runtime exception or surprising result shows up, and as a checklist when 
 
 | You may see | Use in 0.12.4 |
 |---|---|
-| `sqlClient.insert/update/merge(entity)` | `save(entity, SaveMode.X, AssociatedSaveMode.Y)` or `saveCommand(entity) { setMode(...) }` (repositories still have `insert`/`update`/`insertIfAbsent`) |
+| `sqlClient.insert/update/merge(entity)` | `save(entity, SaveMode.X, AssociatedSaveMode.Y)` or `saveCommand(entity) { setMode(...) }` (repository `insert`/`update`/`insertIfAbsent`/`merge` are `@Deprecated`) |
 | `sqlClient.entities.save(entity) { setAutoAttachingAll() }` | `setAssociatedModeAll(AssociatedSaveMode.APPEND/MERGE)` |
 | `KFilterDsl.disableAll()` | `disableByTypes(...)` |
 | `ExceptionTranslator { e, args -> … }` lambda | `object : ExceptionTranslator<T> { override fun translate(...) }` |

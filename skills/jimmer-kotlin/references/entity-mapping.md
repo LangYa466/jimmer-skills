@@ -43,7 +43,8 @@ interface Book {
 
 - **One Jimmer type per file.** A `.kt` file may declare only one `@Entity`/`@MappedSuperclass`/`@Embeddable`/
   `@Immutable` type; otherwise KSP fails with "The File: X.kt declares several types decorated by ...".
-- Only abstract `val`s plus `@Formula` properties with getters are allowed (no `var`, no functions with bodies used as props).
+- Properties are `val`s (`var` is rejected); abstract functions are rejected. A non-abstract `val` with a getter is
+  modeled only when annotated `@Formula` — otherwise Jimmer ignores it.
 - `@Immutable` (non-ORM) gives drafts/copy without a SQL DSL.
 - KSP generates `BookDraft`, `BookProps.kt` (table DSL extension properties), `BookFetcher.kt` (fetcher DSL) and
   the factory functions `Book { }`, `Book(base) { }`, `book.copy { }`. There are no `Immutables`/`Tables`/`Fetchers`
@@ -128,8 +129,8 @@ Owning vs mirror side does not restrict save commands. A middle table with extra
 @ManyToOne @OnDissociate(DissociateAction.SET_NULL) val store: BookStore?           // NONE|LAX|CHECK|SET_NULL|DELETE
 ```
 
-`@OnDissociate` (only on FK-based many-to-one) decides what happens to children a parent no longer references
-(`REPLACE` saves, deleting the parent): `NONE` → `CHECK` by default (or `LAX` for fake FKs when checking is off),
+`@OnDissociate` (on FK-based many-to-one / owning one-to-one props) decides what happens to children a parent no longer references
+(`REPLACE` saves, deleting the parent): `NONE` → `CHECK` by default, `LAX` when `setDefaultDissociateActionChecking(false)` (real and fake FKs alike),
 `LAX` do nothing, `CHECK` throw, `SET_NULL` clear the FK, `DELETE` delete children recursively.
 Override per command: `setDissociateAction(Book::store, DissociateAction.DELETE)`.
 

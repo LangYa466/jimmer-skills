@@ -97,7 +97,7 @@ invalidation).
 ## How caches are used
 
 ```java
-Book book = sqlClient.findById(Book.class, 1L);                 // object cache "Book-1" (misses are re-queried)
+Book book = sqlClient.findById(Book.class, 1L);                 // object cache "Book-1"
 Map<Long, Book> books = sqlClient.findMapByIds(Book.class, List.of(1L, 2L, 999L));
 
 List<BookStore> stores = sqlClient.createQuery(store)           // root: always SQL
@@ -117,6 +117,8 @@ List<BookStore> stores = sqlClient.createQuery(store)           // root: always 
   applied, but a cache **hit** is returned without re-checking filters/logical deletion (unless the filter is a
   `ShardingFilter`). Use a query when filter semantics matter.
 - Cache misses are loaded in batches (one SQL for all missing ids).
+- Ids that don't exist are not cached by a local-only (Caffeine) chain — they are queried again next time — but a
+  chain with a remote level (Redis) stores them as `null`.
 
 ## Consistency and invalidation
 
@@ -125,7 +127,7 @@ Invalidation is automatic for object and association caches, driven by triggers 
 | Trigger type | What invalidates the cache |
 |---|---|
 | `BINLOG_ONLY` (default) | only changes you feed to `sqlClient.getBinLog().accept(...)` from CDC (any writer, after commit). **Without CDC wiring, nothing is invalidated.** |
-| `TRANSACTION_ONLY` | changes made through Jimmer APIs; Jimmer selects old rows during mutations. The Spring Boot starter stores pending deletions in table `JIMMER_TRANS_CACHE_OPERATOR` (auto-created; not supported by `DefaultDialect` — set a real dialect) and flushes them after commit, retrying every `jimmer.transaction-cache-operator-fixed-delay` ms (default 5000) |
+| `TRANSACTION_ONLY` | changes made through Jimmer APIs; Jimmer selects old rows during mutations. By default cache entries are deleted immediately, inside the transaction. To defer deletion until after commit, declare a `CacheOperator` bean `new TransactionCacheOperator()`: it records pending deletions in table `JIMMER_TRANS_CACHE_OPERATOR` (auto-created only by `H2Dialect`, the MySQL-style dialects, `OracleDialect` and `PostgresDialect`) and the starter flushes them after commit, retrying every `jimmer.transaction-cache-operator-fixed-delay` ms (default 5000) |
 | `BOTH` | binlog for caches, plus transaction triggers for your own listeners |
 
 Examples of automatic invalidation: changing `BOOK.PRICE` evicts `Book-<id>`; changing `BOOK.STORE_ID` evicts

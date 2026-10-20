@@ -136,7 +136,7 @@ internally but shows `storeId` and hides `store`; fetching `fullName()` (a `@For
 ## Equality
 
 `equals`/`hashCode` are value based on the object's shape: if both objects have the id loaded, only ids are compared;
-otherwise loaded state, visibility and values of every property must match. Objects of different shapes are not equal.
+otherwise loaded state, visibility and values of every property must match. Without loaded ids, objects of different shapes are not equal.
 
 ## Non-ORM immutable types
 

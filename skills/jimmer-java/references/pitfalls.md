@@ -42,20 +42,20 @@ result shows up, and as a checklist when reviewing Jimmer code.
 | `SaveException.CannotDissociateTarget` | `REPLACE`/delete would orphan children whose many-to-one is `CHECK`/`NONE`; configure `@OnDissociate(SET_NULL/DELETE)` or `setDissociateAction` |
 | `SaveException.OptimisticLockError` | stale `@Version` or custom optimistic lock predicate false |
 | `IllegalArgumentException: Illegal exception translator type ... is not class type` | an `ExceptionTranslator` written as a lambda; use an anonymous class or a named class |
-| `IllegalStateException` from `sqlClient.transaction(...)` | needs a Jimmer `TxConnectionManager`; with Spring use `@Transactional` |
+| `IllegalStateException` from `sqlClient.transaction(...)` | needs a `TxConnectionManager` (e.g. `simpleConnectionManager`); under the Spring starter it needs a `DataSourceTransactionManager` bean — or just use `@Transactional` |
 | `NullPointerException: The parameters[i] ... cannot be null ... @DynamicParam` | Spring Data `JRepository` derived-query parameters are only dynamic with `@DynamicParam` |
 | `UnsupportedOperationException` in `createInsert(associationTable, source)` | middle-table insert-from-select only supports a rootless source (`createBaseQuery()` with constants) in 0.12.4 |
 | exception for `typeMatchMode(TypeMatchMode.EXACT)` on an abstract type | `EXACT` needs a concrete type |
 | "NestMember requires ASM7" when using `weakJoin(lambda)` | the lambda's enclosing class has nested classes; declare the weak join as a top-level `WeakJoin` class (`weakJoin(BookAuthorJoin.class)`) |
 | `NoClassDefFoundError: org/antlr/...` with `FetcherCompiler` | add `org.antlr:antlr4-runtime:4.13.0` |
-| Update with join fails | only `MySqlDialect`/`PostgresDialect` support joins in `createUpdate`; use a subquery |
+| Update with join fails | only the MySQL-style dialects, `PostgresDialect` and `SQLiteDialect` support joins in `createUpdate`; use a subquery |
 | `returning(...)` on update/insert unsupported | DML returning is implemented for `H2Dialect` and `PostgresDialect` |
-| `DefaultDialect` + `TRANSACTION_ONLY` cache invalidation (Spring) | the starter needs table `JIMMER_TRANS_CACHE_OPERATOR`; set a real dialect |
+| error creating table `JIMMER_TRANS_CACHE_OPERATOR` | a `TransactionCacheOperator` needs a dialect that can create it (`H2Dialect`, MySQL-style, `OracleDialect`, `PostgresDialect`); create the table yourself otherwise |
 | `IllegalArgumentException: Illegal json` from `getBinLog().accept(...)` (cause `Integer cannot be cast to BigDecimal`) | 0.12.4 converts `BigDecimal`/`BigInteger` binlog values with `asInt()`; register `setBinLogPropReader(BigDecimal.class, (p, n) -> new BigDecimal(n.castTo(String.class)))` |
 
 ## Silent wrong results (the dangerous ones)
 
-1. **Constant on the left of a comparison is rendered with the negated operator.** `Expression.numeric().value(x).gt(col)`
+1. **Constant on the left of a comparison is rendered with the negated operator.** `Expression.value(x).gt(col)`
    becomes `col <= x` (`<` → `>=`, `>` → `<=`, `>=` → `<`, `<=` → `>`). Always write the column first:
    `col.lt(x)`. This also hits `setUpdateWhere`/`setOptimisticLock` when Jimmer evaluates them with a pre-query
    (interceptors, `TRANSACTION_ONLY` triggers, no native upsert): `values.newNumber(P).gt(table.p())` reports equal
@@ -79,14 +79,15 @@ result shows up, and as a checklist when reviewing Jimmer code.
     affected-row counts.
 11. **Java `@Formula` default methods** report `isLoaded() == true` whenever their dependencies are loaded, but are
     only serialized when fetched explicitly.
-12. **Repository `insert` = `INSERT_ONLY` + `APPEND`** — it never updates and appends associated objects.
+12. **Repository shortcuts are deprecated and easy to misread**: `insert` = `INSERT_ONLY` + `APPEND` (never updates);
+    the non-deprecated `save(entity, SaveMode)` keeps `REPLACE` for associations.
 13. **`inIf(emptyList)` is not ignored** — it matches no rows; only `inIf(null)` is skipped.
 
 ## APIs that changed or never existed (docs/blogs vs 0.12.4)
 
 | You may see | Use in 0.12.4 |
 |---|---|
-| `sqlClient.insert/update/merge/insertIfAbsent(entity)` | `save(entity, SaveMode.X, AssociatedSaveMode.Y)` or `saveCommand(entity).setMode(...)` (repositories still have shortcuts) |
+| `sqlClient.insert/update/merge/insertIfAbsent(entity)` | `save(entity, SaveMode.X, AssociatedSaveMode.Y)` or `saveCommand(entity).setMode(...)` (the repository shortcuts are `@Deprecated`) |
 | `sqlClient.save(entity, SaveMode.X)` / `save(entity, AssociatedSaveMode.Y)` | both modes are required in the overload, or use `saveCommand` |
 | `sqlClient.insertEntities/updateEntities/saveEntities(list, mode)` | `saveEntities(list, SaveMode, AssociatedSaveMode)` / `saveEntitiesCommand(list)` |
 | `UserOptimisticLock` | `UpdateCondition<E, T>` (same lambda shape) |

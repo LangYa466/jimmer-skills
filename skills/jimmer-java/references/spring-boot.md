@@ -26,8 +26,8 @@ dependencies {
     implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:0.12.4"   // brings jimmer-sql, spring-jdbc, spring-data-commons
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:0.12.4"
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    runtimeOnly "org.babyfish.jimmer:jimmer-client-swagger:0.12.4"           // optional: embedded Swagger UI assets
-    // runtimeOnly "org.babyfish.jimmer:jimmer-client-scalar:0.12.4"        // optional: Scalar UI instead
+    runtimeOnly "org.babyfish.jimmer:jimmer-client-swagger:0.12.4"           // required for the OpenAPI UI page
+    // runtimeOnly "org.babyfish.jimmer:jimmer-client-scalar:0.12.4"        // or the Scalar UI instead
     runtimeOnly 'com.h2database:h2'                                         // or your JDBC driver
 }
 ```
@@ -66,7 +66,7 @@ and `@EnableDtoGeneration` (Java) on some class; put `@EnableImplicitApi` on the
 | `jimmer.executor-context-prefixes` | — | packages whose stack frames are appended to SQL logs |
 | `jimmer.database-validation-mode` | `NONE` | `WARNING`/`ERROR`: compare entities with DB metadata at startup |
 | `jimmer.trigger-type` | `BINLOG_ONLY` | `TRANSACTION_ONLY`, `BOTH` |
-| `jimmer.default-reference-fetch-type` | `SELECT` | `JOIN_IF_NO_CACHE`, `JOIN_ALWAYS` |
+| `jimmer.default-reference-fetch-type` | `SELECT` | `JOIN_IF_NO_CACHE`, `JOIN_ALWAYS`, `AUTO` |
 | `jimmer.max-join-fetch-depth` | `3` | |
 | `jimmer.default-batch-size` / `default-list-batch-size` | `128` / `16` | fetcher batch sizes |
 | `jimmer.default-enum-strategy` | `NAME` | `ORDINAL` |
@@ -98,7 +98,7 @@ and `@EnableDtoGeneration` (Java) on some class; put `@EnableImplicitApi` on the
 | `jimmer.client.openapi.path` | — | e.g. `/openapi.yml`; enables the OpenAPI document |
 | `jimmer.client.openapi.ui-path` | — | e.g. `/openapi.html`; enables the UI page |
 | `jimmer.client.openapi.properties.*` | — | `info.title/description/version`, `servers`, `securities`, `components` … |
-| `jimmer.client.java-feign.path` / `api-name` / `indent` / `base-package` | — | download Spring Cloud Feign client code |
+| `jimmer.client.java-feign.path` | — | registers a Feign-client download endpoint, but it throws `UnsupportedOperationException` in 0.12.4 |
 
 (Some older docs list `jimmer.save-command-pessimistic-lock` or `ts.anonymous`; they do not exist in 0.12.4.)
 
@@ -145,8 +145,9 @@ public class BookService {
 ```
 
 - Run multi-statement saves/deletes inside `@Transactional` — a save graph issues several statements.
-- `sqlClient.transaction(...)` (Jimmer's own API) is for clients configured with a Jimmer `TxConnectionManager`;
-  under Spring use `@Transactional`/`TransactionTemplate`.
+- `sqlClient.transaction(...)` also works under the starter: its `SpringConnectionManager` is a `TxConnectionManager`
+  that runs the block through the context's `DataSourceTransactionManager` (fails if there is none, e.g. JPA-only
+  setups). Prefer `@Transactional`/`TransactionTemplate` for consistency with the rest of the application.
 - Plain Spring without the starter: implement `ConnectionManager.execute` with `DataSourceUtils.getConnection` /
   `releaseConnection` (never `dataSource.getConnection()` directly).
 - Native SQL that does not fit the DSL can use `JdbcTemplate` in the same transaction.
@@ -176,12 +177,14 @@ public class BookRepository extends AbstractJavaRepository<Book, Long> {
 
 // inherited helpers (JavaRepository): findById(id[, fetcher | ViewClass]), findByIds, findMapByIds,
 // findAll(fetcher | ViewClass, BookProps.NAME, BookProps.EDITION.desc()), findPage(PageParam.byNo(1, 10), ...),
-// findSlice(limit, offset, ...), save/insert/update/merge(entity | input [, AssociatedSaveMode]),
+// findSlice(limit, offset, ...), save(entity | input[, SaveMode[, AssociatedSaveMode]]),
 // saveCommand(...), saveEntitiesCommand(...), deleteById(id[, DeleteMode]), deleteByIds(...)
 ```
 
-`PageParam.byIndex(0, 10)` is 0-based, `PageParam.byNo(1, 10)` is 1-based. Repository `insert` = `INSERT_ONLY` +
-`APPEND`, `update` = `UPDATE_ONLY` + `UPDATE`, `save` = `UPSERT` + `REPLACE`; `merge` is deprecated.
+`PageParam` is `org.babyfish.jimmer.spring.repo.PageParam`; `byIndex(0, 10)` is 0-based, `byNo(1, 10)` is 1-based.
+`save(e)` = `UPSERT` + `REPLACE`; `save(e, mode)` keeps `REPLACE`; `save(e, mode, associatedMode)` sets both. The
+shortcuts `insert` (`INSERT_ONLY` + `APPEND`), `insertIfAbsent`, `update` (`UPDATE_ONLY` + `UPDATE`), `merge` and
+`save(e, AssociatedSaveMode)` still exist but are all `@Deprecated` — use `save(e, SaveMode.X, AssociatedSaveMode.Y)`.
 
 **2. Spring Data style (`org.babyfish.jimmer.spring.repository.JRepository<E, ID>`)** — interface proxies with derived
 query methods. Associations can be referenced (`storeName` → `store.name`), and a `Fetcher<E>`/`Class<View>` parameter
@@ -305,7 +308,8 @@ jimmer:
 ```
 
 - Endpoints are registered only when the paths are configured (servlet apps).
-- Without `jimmer-client-swagger`, the UI page loads Swagger assets from unpkg; add the artifact for offline use.
+- The UI page needs `jimmer-client-swagger` (or `jimmer-client-scalar`) on the runtime classpath; without either it
+  only shows a "no UI dependency" notice.
 - `GET /ts.zip` returns `index.ts`, `Api.ts`, `ApiErrors.ts`, `Executor.ts`, `services/<Controller>.ts`,
   `model/dto/<Entity>Dto.ts` (one type per `@FetchBy` fetcher, e.g. `BookDto['BookController/SIMPLE_FETCHER']`),
   `model/static/*.ts` (DTO classes, inputs) and `model/enums/*.ts`. In OpenAPI the shapes become schemas such as
@@ -389,5 +393,6 @@ With the routing client every method that touches Jimmer must run under `@Transa
 
 Entities owned by another microservice are mapped with `@Entity(microServiceName = "...")` and associations to them
 are fetched remotely (`jimmer.micro-service-name` names the current service; the starter exposes an exporter endpoint
-and uses a `MicroServiceExchange`, by default `SpringCloudExchange` over a load-balanced `RestTemplate`). Remote
+and uses a `MicroServiceExchange`, by default `SpringCloudExchange` over the context's `RestTemplate` — declare a
+`@LoadBalanced RestTemplate` bean yourself; the starter does not create one). Remote
 associations cannot be joined in SQL and must be `@Nullable` for many-to-one.

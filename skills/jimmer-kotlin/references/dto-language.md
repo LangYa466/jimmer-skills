@@ -88,7 +88,9 @@ BookView {
     as(^ -> book) { edition price }            // bookEdition, bookPrice
 }
 ```
-Patterns: `^ -> p`, `^p ->`, `^p -> q`, `$ -> s`, `$s ->`, `$s -> t`, `x ->`, `x -> y`.
+Patterns: `^ -> p` (add prefix), `^p ->`, `^p -> q`, `$ -> s` (add suffix), `s $ ->` (remove suffix), `s $ -> t`
+(replace suffix — the space before `$` is required), `x ->`, `x -> y`. Example: `as(Time $ -> At) { createdTime }` →
+`createdAt`.
 
 ## Associations: nested, id(), recursive, flat, fold
 
@@ -150,7 +152,8 @@ input BookInput implements com.example.HasName {
     @Size(max = 200) remark: String
 }
 ```
-Entity annotations are copied when the DTO prop has none. Arrays: `[...]` or `{...}`.
+Entity annotations are copied unless the DTO prop declares an annotation of the same type; Jimmer's own annotations
+(except `org.babyfish.jimmer.client.*`) are never copied. Arrays: `[...]` or `{...}`.
 
 ## Input DTOs: null handling modes
 

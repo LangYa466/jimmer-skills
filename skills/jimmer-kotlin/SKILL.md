@@ -35,8 +35,8 @@ DSL. Its core idea: read and write **object graphs of arbitrary shape** as a who
 | Generated (`build/generated/ksp/main/kotlin`) | Use it for |
 |---|---|
 | `BookDraft.kt`: `Book { }`, `Book(base) { }`, `Book.copy { }`, `BookDraft` | create / copy-modify objects |
-| `BookProps.kt`: `table.name`, `table.store`, `` table.`store?` ``, `table.storeId`, `table.authors { }`, `BookProps.NAME` | SQL DSL extension properties, `TypedProp` constants |
-| `BookFetcher.kt`: `table.fetchBy { }`, `newFetcher(Book::class).by { }` | object fetcher DSL |
+| `BookProps.kt`: `table.name`, `table.store`, `` table.`store?` ``, `table.storeId`, `table.authors { }`, `table.fetchBy { }`, `BookProps.NAME` | SQL DSL extension properties, `TypedProp` constants |
+| `BookFetcher.kt`: `newFetcher(Book::class).by { }` (`BookFetcherDsl`) | object fetcher DSL |
 | from `src/main/dto/**.dto` | `View<Book>` / `Input<Book>` / `KSpecification<Book>` classes |
 
 There are no `Immutables`/`Tables`/`Fetchers` summary classes in Kotlin. Most DSL operators are extension functions:
@@ -103,7 +103,7 @@ val id = sqlClient.save(Book {
    **`MERGE`**; `saveCommand(e, SaveMode.X)` → **`REPLACE`**; `KotlinRepository.save(e, mode)` → `REPLACE`. `REPLACE`
    dissociates associated rows missing from the collection you pass. Pass `AssociatedSaveMode` explicitly.
 3. **No `insert()/update()/merge()` on `KSqlClient`.** Use `save(e, SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND)`,
-   `save(e, SaveMode.UPDATE_ONLY, ...)` or `save(e) { setMode(...) }` (repositories have `insert`/`update`).
+   `save(e, SaveMode.UPDATE_ONLY, ...)` or `save(e) { setMode(...) }` (repository `insert`/`update` shortcuts are `@Deprecated`).
 4. **Unloaded ≠ null.** Props not assigned in `Book { }` are unloaded and untouched by saves; `null` writes NULL.
    Check with `isLoaded(obj, Book::store)` (`org.babyfish.jimmer.kt`).
 5. **Objects without id need complete `@Key` values** (or `setKeyProps`, `INSERT_ONLY`), else

@@ -53,7 +53,7 @@ BookFetcher.$
                 AuthorFetcher.$.allScalarFields(),
                 cfg -> cfg
                         .batch(32)                         // ids per secondary query (default list batch size 16)
-                        .limit(10, 0)                      // per-parent paging; forces batch(1) semantics
+                        .limit(10, 0)                      // per-parent paging: one UNION ALL sub-select per parent
                         .filter(args -> {                  // property-level filter (where/orderBy on the child table)
                             args.where(args.getTable().firstName().ilike("a"));
                             args.orderBy(args.getTable().lastName());
@@ -64,8 +64,8 @@ BookFetcher.$
 | Config | Applies to | Meaning |
 |---|---|---|
 | `batch(n)` | all associations | secondary query batch size (global defaults: `setDefaultBatchSize` 128 for references, `setDefaultListBatchSize` 16 for lists) |
-| `filter(args -> ...)` | all associations | extra `where`/`orderBy` for associated rows (associations with filters bypass association caches) |
-| `limit(limit, offset)` | collections | per-parent pagination (executes one query per parent) |
+| `filter(args -> ...)` | collections, nullable references | extra `where`/`orderBy` for associated rows (associations with filters bypass association caches; rejected on non-null references) |
+| `limit(limit, offset)` | collections | per-parent pagination (each batch becomes one `UNION ALL` of per-parent limited sub-selects) |
 | `fetchType(ReferenceFetchType)` | references | `SELECT` (default), `JOIN_IF_NO_CACHE`, `JOIN_ALWAYS`, `AUTO` (use global `setDefaultReferenceFetchType`) |
 | `depth(n)` / `recursive(strategy)` | recursive props | see below |
 
@@ -120,7 +120,7 @@ sqlClient.findByIds(fetcher, List.of(1L, 2L));
 sqlClient.findMapByIds(fetcher, List.of(1L, 2L));
 sqlClient.getEntities().findAll(fetcher, BookProps.NAME, BookProps.EDITION.desc()); // sorted by typed props
 sqlClient.saveCommand(book).execute(fetcher).getModifiedEntity();  // re-read the saved object in this shape
-t.fetch(null)                                            // a null fetcher means "all table fields" — handy for optional params
+t.fetch((Fetcher<Book>) null)                            // a null fetcher means "all table fields" — handy for optional params
 ```
 
 In Spring MVC, annotate return types with `@FetchBy("FETCHER_CONSTANT")` so generated OpenAPI/TypeScript types
@@ -159,5 +159,6 @@ arbitrarily deep shapes).
 - Each fetched association = one extra query per batch, regardless of row count. Use `JOIN_ALWAYS` for small
   many-to-one lookups on hot paths.
 - Global filters and logical deletion apply to associated objects automatically.
-- `limit(...)` on a collection field disables batching (one query per parent) — use sparingly.
+- `limit(...)` on a collection field turns each batch into a `UNION ALL` of per-parent sub-selects — heavier SQL, use
+  sparingly.
 - With caches enabled, associations are served from association caches unless a property-level filter is used.

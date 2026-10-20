@@ -65,7 +65,7 @@ t.price().between(lo, hi)        t.price().notBetween(lo, hi)
 t.name().like("Ab")              // %Ab%  (LikeMode.ANYWHERE default)
 t.name().like("Ab", LikeMode.START)  // Ab%   (also END, EXACT)
 t.name().ilike("ab")             // case-insensitive (ilike or lower(...) like)
-t.name().notLike("x")
+Predicate.not(t.name().like("x"))  // there is no notLike in the Java DSL
 t.store().isNull()               t.storeId().isNotNull()
 t.name().in(List.of("A", "B"))   t.name().notIn(list)
 Expression.tuple(t.name(), t.edition()).in(List.of(new Tuple2<>("A", 1), new Tuple2<>("B", 2)))
@@ -208,7 +208,7 @@ List<Tuple2<Long, BigDecimal>> rows = sqlClient.createQuery(t)
 
 ```java
 t.price().plus(BigDecimal.ONE) .minus(x) .times(x) .div(x) .rem(x)
-t.firstName().concat(Expression.string().value(" "), t.lastName())
+t.firstName().concat(Expression.value(" "), t.lastName())
 t.name().length()  .lower()  .upper()  .trim()
 t.website().coalesce("N/A")                            // two-arg coalesce
 t.website().coalesceBuilder().or(t.name()).or("N/A").build()
@@ -220,11 +220,12 @@ Expression.string().caseBuilder()                      // searched case
 Expression.string().caseBuilder(t.name())              // simple case
         .when("SQL in Action", "Matched").otherwise("Other")
 
-Expression.string().value("x")  Expression.numeric().value(3L)  Expression.comparable().value(now)
+Expression.value("x")  Expression.value(3L)  Expression.value(now)   // typed literal parameters
 Expression.nullValue(Boolean.class)                    // null literal must be typed
-Expression.constant(1)                                 // inlined numeric constant (only numbers; avoid in general)
+Expression.constant(1)                                 // inlined literal (numbers or strings); avoid in general
 ```
-Java uses type-guided factories: `Expression.string()`, `numeric()`, `comparable()`, `any()`.
+Type-guided factories `Expression.string()`, `numeric()`, `comparable()`, `date()`, `temporal()`, `any()` provide
+`caseBuilder`, `sql(...)`, etc.; their `value(...)` methods are deprecated in favor of the static `Expression.value(...)`.
 
 ## Native SQL fragments
 
@@ -359,7 +360,8 @@ sqlClient.createQuery(c)                                   // returns Organizati
         .execute();
 OrganizationTable orgTable = OrganizationTable.$;
 sqlClient.createQuery(orgTable).typeMatchMode(TypeMatchMode.EXACT).select(orgTable).execute();
-// root queries default to POLYMORPHIC; EXACT on an abstract type (no @DiscriminatorValue) throws.
+// root queries default to POLYMORPHIC; EXACT on an abstract type (the @Inheritance root by default, or
+// @Entity(instantiability = ABSTRACT)) throws.
 // TypeMatchMode is org.babyfish.jimmer.sql.ast.TypeMatchMode (AUTO / EXACT / POLYMORPHIC)
 ```
 Fetch subtype props with `ClientFetcher.$.name().forType(OrganizationFetcher.$.taxCode())`.

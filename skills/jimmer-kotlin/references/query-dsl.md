@@ -30,6 +30,8 @@ import org.babyfish.jimmer.sql.kt.ast.expression.*        // eq, `eq?`, valueIn,
 import org.babyfish.jimmer.sql.kt.ast.table.makeOrders    // table.makeOrders("name asc, edition desc")
 import com.example.model.*                                 // generated XxxProps.kt extension properties (table.name …)
 import org.babyfish.jimmer.sql.kt.exists                   // sqlClient.exists(Book::class) { ... }
+import org.babyfish.jimmer.sql.kt.createQuery              // reified sqlClient.createQuery<Book, _> { ... }
+import org.babyfish.jimmer.sql.kt.ast.query.whereIfNotNull // also whereIfNotEmpty, whereIfNotBlank
 ```
 
 ## Query lifecycle
@@ -87,7 +89,8 @@ and(p1, p2)   or(p1, p2)   p.not()            // not() is an extension in Kotlin
 ```
 
 - `where(p1, p2)` and repeated `where(...)` are AND-ed; `where += p` also works.
-- Comparing with a nullable value needs the `?` variants (below) or an explicit null check.
+- `eq`/`ne` accept `null` and render `IS NULL`/`IS NOT NULL` — use `` `eq?` ``/`` `ne?` `` to *skip* the predicate
+  instead. The other comparison operators need a non-null value (or their `?` variants).
 - `table.storeId` (FK of a reference) never joins.
 - **Keep the column on the left.** 0.12.4 renders `value(x) gt table.price` with the negated operator
   (`PRICE <= x`) — silently wrong. Write `table.price lt x`.
@@ -225,7 +228,7 @@ table.name.lower()  .upper()  .trim()  .left(3)  .substring(1, 3)  .position("SQ
 table.website.coalesce("N/A")                       // builder: table.website.coalesce().or(table.name).end()
 case().match(table.price lt BigDecimal(30), "Cheap").match(table.price gt BigDecimal(70), "Expensive").otherwise("Normal")
 case(table.name).match("SQL in Action", "Matched").otherwise("Other")
-value("x")   value(3L)   constant(1)               // constant() inlines numbers only
+value("x")   value(3L)   constant(1)               // constant() inlines a literal (number, enum or string); prefer value()
 nullValue(Boolean::class)
 ```
 
@@ -243,7 +246,7 @@ sqlNullable(String::class, "json_value(%e, '$.x')") { expression(table.name) }
 orderBy(table.name)                                  // asc by default
 orderBy(table.edition.desc(), table.price.desc())    // keep all args as orders (asc()/desc()) when mixing directions
 orderBy(table.makeOrders("store.name asc, name, edition desc"))   // client-specified sort
-orderBy(KSpringOrders.toOrders(table, sort))        // Spring Data Sort (starter)
+orderBy(sort)                                       // Spring Data Sort: import org.babyfish.jimmer.spring.repository.orderBy (starter)
 
 val page: Page<Book> = sqlClient.createQuery(Book::class) {
     orderBy(table.name.asc(), table.edition.desc())

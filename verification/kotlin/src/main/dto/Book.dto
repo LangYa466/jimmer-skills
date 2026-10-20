@@ -65,3 +65,8 @@ specification BookSpecification {
         like/i(firstName, lastName) as authorName
     }
 }
+
+BookSuffixAliasView {
+    id
+    as(Time $ -> At) { createdTime modifiedTime }
+}

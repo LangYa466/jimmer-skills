@@ -58,10 +58,10 @@ public class KnownBehaviorTest {
         BigDecimal fifty = new BigDecimal("50.00");
         // 50 > 50 is false, but Jimmer renders PRICE <= 50
         assertFalse(sqlClient.createQuery(t).where(t.id().eq(1L))
-                .where(Expression.numeric().value(fifty).gt(t.price())).select(t.id()).execute().isEmpty());
+                .where(Expression.value(fifty).gt(t.price())).select(t.id()).execute().isEmpty());
         // 50 < 50 is false, but Jimmer renders PRICE >= 50
         assertFalse(sqlClient.createQuery(t).where(t.id().eq(1L))
-                .where(Expression.numeric().value(fifty).lt(t.price())).select(t.id()).execute().isEmpty());
+                .where(Expression.value(fifty).lt(t.price())).select(t.id()).execute().isEmpty());
         // column on the left is correct
         assertTrue(sqlClient.createQuery(t).where(t.id().eq(1L))
                 .where(t.price().lt(fifty)).select(t.id()).execute().isEmpty());

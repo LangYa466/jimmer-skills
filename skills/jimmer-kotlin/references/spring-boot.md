@@ -30,7 +30,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    runtimeOnly("org.babyfish.jimmer:jimmer-client-swagger:0.12.4")           // optional: offline Swagger UI assets
+    runtimeOnly("org.babyfish.jimmer:jimmer-client-swagger:0.12.4")           // required for the OpenAPI UI page (or -scalar)
     runtimeOnly("com.h2database:h2")                                          // or your JDBC driver
 }
 
@@ -90,7 +90,7 @@ All properties (`org.babyfish.jimmer.spring.cfg.JimmerProperties`):
 | `jimmer.executor-context-prefixes` | — | packages whose stack frames are appended to SQL logs |
 | `jimmer.database-validation-mode` | `NONE` | `WARNING`/`ERROR`: compare entities with DB metadata at startup |
 | `jimmer.trigger-type` | `BINLOG_ONLY` | `TRANSACTION_ONLY`, `BOTH` |
-| `jimmer.default-reference-fetch-type` | `SELECT` | `JOIN_IF_NO_CACHE`, `JOIN_ALWAYS` |
+| `jimmer.default-reference-fetch-type` | `SELECT` | `JOIN_IF_NO_CACHE`, `JOIN_ALWAYS`, `AUTO` |
 | `jimmer.max-join-fetch-depth` | `3` | |
 | `jimmer.default-batch-size` / `default-list-batch-size` | `128` / `16` | fetcher batch sizes |
 | `jimmer.default-enum-strategy` | `NAME` | `ORDINAL` |
@@ -122,7 +122,7 @@ All properties (`org.babyfish.jimmer.spring.cfg.JimmerProperties`):
 | `jimmer.client.openapi.path` | — | e.g. `/openapi.yml`; enables the OpenAPI document |
 | `jimmer.client.openapi.ui-path` | — | e.g. `/openapi.html`; enables the UI page |
 | `jimmer.client.openapi.properties.*` | — | `info.title/description/version`, `servers`, `securities`, `components` … |
-| `jimmer.client.java-feign.path` / `api-name` / `indent` / `base-package` | — | download Spring Cloud Feign client code |
+| `jimmer.client.java-feign.path` | — | registers a Feign-client download endpoint, but it throws `UnsupportedOperationException` in 0.12.4 |
 
 ## Customizing the KSqlClient
 
@@ -160,8 +160,9 @@ class BookService(private val sqlClient: KSqlClient) {
 ```
 
 - Run graph saves/deletes inside `@Transactional` — they issue several statements.
-- `sqlClient.transaction { }` is for clients built with a Jimmer `TxConnectionManager`; under Spring use
-  `@Transactional`/`TransactionTemplate`.
+- `sqlClient.transaction { }` also works under the starter (its `SpringConnectionManager` runs the block through the
+  context's `DataSourceTransactionManager`; it fails if there is none, e.g. JPA-only setups). Prefer
+  `@Transactional`/`TransactionTemplate` for consistency.
 - Without `kotlin("plugin.spring")`, `@Transactional` classes must be `open`.
 
 ## Repositories
@@ -204,14 +205,14 @@ class BookRepository(sql: KSqlClient) : AbstractKotlinRepository<Book, Long>(sql
 Inherited (`KotlinRepository`): `findById(id[, fetcher | ViewClass::class])`, `findByIds`, `findMapByIds`,
 `findAll(fetcher) { asc(Book::name); desc(Book::edition) }`, `findPage(PageParam.byNo(1, 10), fetcher) { ... }`,
 `findSlice(limit, offset, ...)`, `save(entity | input)`, `save(entity, mode[, associatedMode])`,
-`saveCommand(...)`, `insert/insertIfAbsent/update(entity[, associatedMode])`, `deleteById(id[, DeleteMode])`,
-`deleteByIds(...)`; reified `findView<BookView>(id)`, `findAllViews<BookView>()`, ...
+`saveCommand(...)`, `deleteById(id[, DeleteMode])`, `deleteByIds(...)`; `AbstractKotlinRepository` adds reified
+`findView<BookView>(id)`, `findAllViews<BookView>()`, ...
 
 - `PageParam` is `org.babyfish.jimmer.spring.repo.PageParam` (`byIndex(0, 10)` 0-based, `byNo(1, 10)` 1-based).
 - Repository defaults: `save(e)` = `UPSERT` + `REPLACE`; `save(e, mode)` = `REPLACE` (unlike `sqlClient.save(e, mode)`,
-  which defaults to `MERGE`); `insert` = `INSERT_ONLY` + `APPEND`; `update` = `UPDATE_ONLY` + `UPDATE`.
-  There is no `save(entity, associatedMode)` overload — pass the mode too:
-  `save(book, SaveMode.UPDATE_ONLY, AssociatedSaveMode.MERGE)`. `insert(input)`/`update(input)` are deprecated.
+  which defaults to `MERGE`). There is no `save(entity, associatedMode)` overload — pass the mode too:
+  `save(book, SaveMode.UPDATE_ONLY, AssociatedSaveMode.MERGE)`. The shortcuts `insert` (`INSERT_ONLY` + `APPEND`),
+  `insertIfAbsent`, `update` (`UPDATE_ONLY` + `UPDATE`) and `merge` still exist but are all `@Deprecated`.
 
 **2. Spring Data style: `KRepository<E, ID>`** (`org.babyfish.jimmer.spring.repository`)
 

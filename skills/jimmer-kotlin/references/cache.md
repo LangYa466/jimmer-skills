@@ -96,7 +96,7 @@ cross-node tracking).
 ## How caches are used
 
 ```kotlin
-sqlClient.findById(Book::class, 1L)                     // object cache "Book-1"; misses are re-queried each time
+sqlClient.findById(Book::class, 1L)                     // object cache "Book-1"
 sqlClient.findMapByIds(Book::class, listOf(1L, 2L, 999L))
 
 val stores = sqlClient.findAll(newFetcher(BookStore::class).by {   // root query: always SQL
@@ -112,6 +112,8 @@ val stores = sqlClient.findAll(newFetcher(BookStore::class).by {   // root query
 - With an object cache, `findById` returns a cache **hit** without re-checking global filters/logical deletion
   (misses are loaded with filters). Use a query when filter semantics matter, or make the filter a `KShardingFilter`.
 - Cache misses are loaded in batches (one SQL for all missing ids).
+- Ids that don't exist are not cached by a local-only (Caffeine) chain — they are queried again next time — but a
+  chain with a remote level (Redis) stores them as `null`.
 
 ## Consistency and invalidation
 
@@ -120,7 +122,7 @@ Invalidation is automatic for object and association caches, driven by `sqlClien
 | Trigger type | What invalidates the cache |
 |---|---|
 | `BINLOG_ONLY` (default) | only changes you feed into `sqlClient.binLog.accept(...)` from CDC. **Without CDC wiring, nothing is invalidated.** |
-| `TRANSACTION_ONLY` | changes made through Jimmer; with Spring the starter stores pending deletions in table `JIMMER_TRANS_CACHE_OPERATOR` and flushes them after commit (needs a real dialect, not `DefaultDialect`) |
+| `TRANSACTION_ONLY` | changes made through Jimmer; cache entries are deleted immediately, inside the transaction. To defer deletion until after commit, configure `setCacheOperator(TransactionCacheOperator())` (Spring: a `CacheOperator` bean): it records pending deletions in table `JIMMER_TRANS_CACHE_OPERATOR` (auto-created only by `H2Dialect`, MySQL-style dialects, `OracleDialect`, `PostgresDialect`) and the starter flushes them after commit, retrying every `jimmer.transaction-cache-operator-fixed-delay` ms |
 | `BOTH` | binlog for caches, plus transaction triggers for your own listeners |
 
 Changing `BOOK.PRICE` evicts `Book-<id>`; changing `BOOK.STORE_ID` evicts `Book.store-<id>`,

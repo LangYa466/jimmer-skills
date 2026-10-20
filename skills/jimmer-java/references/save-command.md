@@ -34,8 +34,9 @@ batched INSERT/UPDATE/DELETE statements. These are the only save methods on `JSq
 
 The same methods exist on `sqlClient.getEntities()`. There is **no** `insert`, `update`, `merge`,
 `insertIfAbsent`, `save(entity, SaveMode)` or `save(entity, AssociatedSaveMode)` on `JSqlClient` in 0.12.4 — many doc
-pages and blog posts still show them. They exist only as shortcuts on Spring repositories (`JavaRepository`,
-`JRepository`, where `merge` is deprecated). With `JSqlClient`, write:
+pages and blog posts still show them. Spring repositories (`JavaRepository`, `JRepository`) still have them, but
+`insert`, `insertIfAbsent`, `update`, `merge` and `save(entity, AssociatedSaveMode)` are all `@Deprecated` there. With
+`JSqlClient` (or a repository), write:
 
 ```java
 sqlClient.save(book, SaveMode.INSERT_ONLY, AssociatedSaveMode.APPEND);          // "insert"
@@ -72,7 +73,7 @@ Object classification used by the docs and error messages:
 |---|---|---|
 | id-specified | `id` loaded | id |
 | key-specified | id unloaded, all `@Key` props of a group loaded | key |
-| wild | neither id nor complete key | — rejected (`NeitherIdNorKey`) unless `INSERT_ONLY`, `INSERT_IF_ABSENT`, `NON_IDEMPOTENT_UPSERT` or `VIOLENTLY_REPLACE` for associations |
+| wild | neither id nor complete key | — rejected (`NeitherIdNorKey`) unless `INSERT_ONLY` or `NON_IDEMPOTENT_UPSERT` (associations: `APPEND`, `VIOLENTLY_REPLACE`); `INSERT_IF_ABSENT` rejects them too |
 
 Association ordering: **forward** associations (FK on this table, e.g. `Book.store`) are saved *before* the owner;
 **backward** associations (one-to-many `BookStore.books`, middle-table `Book.authors`) are saved *after* it.
@@ -162,7 +163,7 @@ With `REPLACE`, existing targets that are absent from the new collection are **d
 
 | DissociateAction | Effect when a child is dissociated |
 |---|---|
-| `NONE` (default) | `CHECK` if `setDefaultDissociateActionCheckable(true)` (default) or the FK is real; else `LAX` |
+| `NONE` (default) | `CHECK` when `setDefaultDissociateActionCheckable(true)` (default), otherwise `LAX` — for real and fake FKs alike |
 | `LAX` | do nothing (DB `on delete cascade` may act). Under `REPLACE` it is treated as `CHECK` |
 | `CHECK` | throw `SaveException.CannotDissociateTarget` if children would be orphaned |
 | `SET_NULL` | set the child FK to NULL (property must be `@Nullable`) |
@@ -258,7 +259,7 @@ sqlClient.saveCommand(Immutables.createBook(d -> d.setId(1L).setPrice(new BigDec
 > this when they evaluate `setUpdateWhere` by a pre-query (e.g. a `DraftInterceptor` needs the original row, triggers
 > are `TRANSACTION_ONLY`, or no native upsert): the official form `values.newNumber(P).gt(table.p())` then reports
 > equal values as accepted. Write `table.p().lt(values.newNumber(P))` instead — correct on every path. The same applies
-> to queries: never write `Expression.numeric().value(x).gt(t.price())`.
+> to queries: never write `Expression.value(x).gt(t.price())`.
 
 Rules: `table`/`target` is the **stored** row (local columns only, no joins); `values.newValue/newString/newNumber/
 newComparable(prop)` is the incoming value and that property must be loaded in the saved object. `set(...)` only
@@ -287,7 +288,8 @@ sqlClient.saveCommand(store)
 
 **Built-in:** a `@Version int version()` property. If the saved object has `version` loaded, the update checks and
 increments it; a mismatch throws `SaveException.OptimisticLockError`. If `version` is unloaded, no check is made.
-New rows get `@Default` or `0`. Entities with `@Version` never use native upsert (select first, reason `OPTIMISTIC_LOCK`).
+New rows get `@Default` or `0`. A loaded `@Version` (or a custom optimistic lock) makes upserts select first (reason
+`OPTIMISTIC_LOCK`), except on dialects that support upsert with an optimistic-lock check (`PostgresDialect`).
 
 **Custom:** an arbitrary predicate (throws `OptimisticLockError` when false). The first argument is the generated
 *table class* in Java:

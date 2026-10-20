@@ -78,7 +78,8 @@ val rows: List<Tuple2<Long, String>> = sqlClient.createUpdateReturning(Author::c
 - Global filters (and logical deletion) apply to the `where`; use
   `sqlClient.filters { setBehavior(LogicalDeletedBehavior.IGNORED) }` / `filters { disableByTypes(...) }` to touch
   filtered rows. (`KFilterDsl` has no `disableAll()`.)
-- Joins in updates are supported only by `MySqlDialect`/`PostgresDialect`; use subqueries elsewhere.
+- Joins in updates are supported only by the MySQL-style dialects (`MySqlDialect`, `MySql5Dialect`, `TiDBDialect`),
+  `PostgresDialect` and `SQLiteDialect`; use subqueries elsewhere.
 
 ## Delete statements
 

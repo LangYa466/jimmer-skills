@@ -83,4 +83,10 @@ class DtoSnippetsTest {
         assertNotNull(sqlClient.findById(BookView::class, 1L))
         assertEquals("B", input.copy(name = "B").name)
     }
+
+    @Test
+    fun suffixAliasPattern() {
+        val view = com.example.dto.BookSuffixAliasView(id = 1L, createdAt = java.time.LocalDateTime.MIN, modifiedAt = java.time.LocalDateTime.MAX)
+        assertEquals(1L, view.id)                                  // `as(Time $ -> At)` renamed createdTime -> createdAt
+    }
 }
