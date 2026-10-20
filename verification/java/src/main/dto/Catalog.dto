@@ -1,0 +1,24 @@
+package com.example.dto.catalog
+
+fragment AuthorNameFields for com.example.model.Author {
+    firstName
+    lastName
+}
+
+AuthorItem for com.example.model.Author {
+    id
+    #include(AuthorNameFields)
+}
+
+StoreItem for com.example.model.BookStore {
+    id
+    name
+}
+
+BookCard for com.example.model.Book {
+    id
+    name
+    edition
+    store -> StoreItem
+    authors -> AuthorItem
+}

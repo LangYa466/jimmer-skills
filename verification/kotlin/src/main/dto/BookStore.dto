@@ -1,0 +1,22 @@
+export com.example.model.BookStore
+    -> package com.example.dto
+
+input CompositeBookStoreInput {
+    #allScalars(this)
+    -id
+    -version
+    books {
+        #allScalars(this)
+        -id
+        id(authors) as authorIds
+    }
+}
+
+FlatBookStoreView {
+    id
+    name
+    fold(meta) {
+        website
+        version
+    }
+}

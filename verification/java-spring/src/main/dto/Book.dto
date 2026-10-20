@@ -1,0 +1,15 @@
+export com.example.model.Book
+    -> package com.example.dto
+
+BookView {
+    #allScalars
+    store { name }
+}
+
+input BookInput {
+    #allScalars
+    -id
+    -modifiedTime
+    id(store)
+    id(authors) as authorIds
+}

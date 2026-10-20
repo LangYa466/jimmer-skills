@@ -1,0 +1,106 @@
+export com.example.model.Book
+    -> package com.example.dto.adv
+
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.example.shape.HasTitle
+import com.example.runtime.{AuthorFieldFilter, ChildNodesRecursionStrategy}
+
+/**
+ * Renaming, annotations and interfaces
+ */
+BookRenamedView implements HasTitle {
+    id
+    @JsonProperty("bookTitle") name as title
+    as(^ -> book) {
+        edition
+        price
+    }
+}
+
+BookRefView {
+    id
+    #allReferences
+}
+
+input UpdateBookInput {
+    #allScalars?
+    id!
+    -tenant
+}
+
+unsafe input UnsafeBookInput {
+    id
+    name
+    store! {
+        id
+    }
+}
+
+BookWithCustom {
+    id
+    remark: String
+    rank: Int = 0
+    tags: List<String>
+}
+
+BookFilteredView {
+    id
+    !where(firstName ilike '%e%')
+    !orderBy(firstName desc)
+    !limit(5)
+    authors {
+        id
+        firstName
+    }
+}
+
+BookFilterClassView {
+    id
+    !filter(AuthorFieldFilter)
+    authors {
+        id
+        firstName
+    }
+}
+
+specification BookAdvancedSpecification {
+    null(store) as noStore
+    notNull(store) as hasStore
+    valueIn(edition) as editions
+    like/^(name)
+    associatedIdEq(store)
+    ne(edition) as excludedEdition
+    gt(price)
+    lt(price)
+}
+
+AuthorGenderView for com.example.model.Author {
+    id
+    gender -> {
+        MALE: 100
+        FEMALE: 101
+    }
+}
+
+TreeDepthView for com.example.model.TreeNode {
+    id
+    name
+    !depth(2)
+    childNodes*
+}
+
+TreeStrategyView for com.example.model.TreeNode {
+    id
+    name
+    !recursion(ChildNodesRecursionStrategy)
+    childNodes*
+}
+
+BookSuffixView {
+    edition
+    id
+    as($ -> Text) {
+        name
+    }
+    extra: Map<String, Any?>?
+}

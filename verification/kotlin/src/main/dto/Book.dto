@@ -1,0 +1,67 @@
+export com.example.model.Book
+    -> package com.example.dto
+
+import java.math.BigDecimal
+
+BookView {
+    #allScalars(Book)
+    store {
+        id
+        name
+    }
+    authors {
+        id
+        firstName
+        lastName
+    }
+}
+
+BookSimpleView {
+    id
+    name
+    edition
+    id(store)
+    id(authors) as authorIds
+}
+
+BookDetailView {
+    #allScalars(this)
+    !fetchType(JOIN_ALWAYS)
+    store {
+        #allScalars
+        -version
+    }
+    !batch(32)
+    !orderBy(lastName asc, firstName asc)
+    authors {
+        id
+        firstName
+        lastName
+    }
+}
+
+input BookInput {
+    #allScalars(Book)
+    id(store)
+    id(authors) as authorIds
+}
+
+dynamic input BookUpdateInput {
+    id!
+    name
+    price
+    fixed id(store)
+}
+
+specification BookSpecification {
+    like/i(name)
+    ge(price)
+    le(price)
+    associatedIdIn(store) as storeIds
+    flat(store) {
+        like/i(name) as storeName
+    }
+    flat(authors) {
+        like/i(firstName, lastName) as authorName
+    }
+}
