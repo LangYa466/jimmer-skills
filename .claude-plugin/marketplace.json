@@ -1,0 +1,17 @@
+{
+  "name": "jimmer-skills",
+  "description": "Claude skills for the Jimmer ORM (Java and Kotlin)",
+  "owner": {
+    "name": "LangYa466"
+  },
+  "plugins": [
+    {
+      "name": "jimmer-skills",
+      "source": "./",
+      "description": "jimmer-java and jimmer-kotlin skills, verified against Jimmer 0.12.4",
+      "version": "1.0.0",
+      "category": "development",
+      "tags": ["jimmer", "orm", "java", "kotlin"]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+export com.example.model.TreeNode
+    -> package com.example.dto
+
+TreeNodeView {
+    #allScalars
+    childNodes*
+}
+
+FlatTreeNodeView {
+    #allScalars(this)
+    flat(parent) {
+        as(^ -> parent) {
+            #allScalars(this)
+        }
+    }
+}
+
+input RecursiveTreeInput {
+    name
+    childNodes*
+}

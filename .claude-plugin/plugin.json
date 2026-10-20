@@ -1,0 +1,12 @@
+{
+  "name": "jimmer-skills",
+  "version": "1.0.0",
+  "description": "Verified Claude skills for the Jimmer ORM (babyfish-ct/jimmer 0.12.4): jimmer-java and jimmer-kotlin cover entity mapping, query DSL, object fetchers, the DTO language, save commands, DML, filters, caching and Spring Boot.",
+  "author": {
+    "name": "LangYa466"
+  },
+  "homepage": "https://github.com/LangYa466/jimmer-skills",
+  "repository": "https://github.com/LangYa466/jimmer-skills",
+  "license": "MIT",
+  "keywords": ["jimmer", "orm", "java", "kotlin", "ksp", "spring-boot", "dto", "sql"]
+}

@@ -1,0 +1,37 @@
+plugins {
+    id 'java'
+}
+ext {
+    jimmerVersion = '0.12.4'
+}
+repositories {
+    mavenCentral()
+}
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+dependencies {
+    implementation platform('org.springframework.boot:spring-boot-dependencies:3.5.6')
+    annotationProcessor platform('org.springframework.boot:spring-boot-dependencies:3.5.6')
+    implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
+    annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-graphql'
+    runtimeOnly "org.babyfish.jimmer:jimmer-client-swagger:${jimmerVersion}"
+    runtimeOnly 'com.h2database:h2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.graphql:spring-graphql-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
+}
+test {
+    useJUnitPlatform()
+    testLogging { events "passed", "failed"; exceptionFormat "full"; showStandardStreams = true }
+}
+tasks.named('compileJava') {
+    inputs.files(fileTree('src/main/dto') { include '**/*.dto' })
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+}

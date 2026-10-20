@@ -1,0 +1,31 @@
+export com.example.mapping.Client
+    -> package com.example.dto.client
+
+ClientView {
+    id
+    name
+    #types {
+        Organization {
+            taxCode
+        }
+        Person {
+            firstName
+            lastName
+        }
+    }
+}
+
+input ClientInput {
+    id
+    name
+    #types {
+        #exhaustive
+        Organization {
+            taxCode
+        }
+        Person {
+            firstName
+            lastName
+        }
+    }
+}

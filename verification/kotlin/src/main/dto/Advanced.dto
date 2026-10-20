@@ -1,0 +1,68 @@
+export com.example.model.Book
+    -> package com.example.dto.adv
+
+import com.example.runtime.{AuthorFieldFilter, ChildNodesRecursionStrategy}
+
+dynamic input BookPatch {
+    id!
+    name?
+    price?
+    id(store)
+}
+
+input BookFixedPatch {
+    id!
+    fixed id(store)
+}
+
+fuzzy input BookFuzzyPatch {
+    id!
+    id(store)
+}
+
+input UpdateBookInput {
+    #allScalars?
+    id!
+    -tenant
+}
+
+BookWithCustom {
+    id
+    remark: String
+    rank: Int = 0
+    tags: List<String>
+}
+
+BookFilterClassView {
+    id
+    !filter(AuthorFieldFilter)
+    authors {
+        id
+        firstName
+    }
+}
+
+specification BookAdvancedSpecification {
+    null(store) as noStore
+    valueIn(edition) as editions
+    like/i(name)
+    associatedIdIn(store) as storeIds
+    flat(authors) {
+        like/i(firstName, lastName) as authorName
+    }
+}
+
+AuthorGenderView for com.example.model.Author {
+    id
+    gender -> {
+        MALE: 100
+        FEMALE: 101
+    }
+}
+
+RecursiveTreeView for com.example.model.TreeNode {
+    id
+    name
+    !recursion(ChildNodesRecursionStrategy)
+    childNodes*
+}
